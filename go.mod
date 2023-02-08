@@ -1,4 +1,4 @@
-module awesomeProject
+module lebot
 
 go 1.20
 

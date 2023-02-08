@@ -1,12 +1,12 @@
 package tg
 
 import (
-	"awesomeProject/secrets"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"lebot/secrets"
 	"log"
 )
 
-func GetTgBot() (*tgbotapi.BotAPI, error) {
+func NewBotApi() (*tgbotapi.BotAPI, error) {
 	tgmToken, err := secrets.GetSecret(secrets.TgmTokenPath)
 	if err != nil {
 		return nil, err

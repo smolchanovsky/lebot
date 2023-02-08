@@ -1,9 +1,9 @@
 package greeting
 
 import (
-	"awesomeProject/core"
 	"errors"
 	"github.com/guregu/dynamo"
+	"lebot/core"
 	"net/mail"
 	"strings"
 )

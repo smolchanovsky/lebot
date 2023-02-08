@@ -1,10 +1,10 @@
 package content
 
 import (
-	"awesomeProject/core"
 	"fmt"
 	"google.golang.org/api/drive/v3"
 	"io"
+	"lebot/core"
 )
 
 const GetFileEvent = "getFileEvent"

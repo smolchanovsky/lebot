@@ -1,14 +1,14 @@
 package dynamo
 
 import (
-	"awesomeProject/secrets"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/guregu/dynamo"
+	"lebot/secrets"
 )
 
-func GetDb() (*dynamo.DB, error) {
+func NewDb() (*dynamo.DB, error) {
 	keyId, err := secrets.GetSecret(secrets.AwsKeyIdPath)
 	if err != nil {
 		return nil, err

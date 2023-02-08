@@ -1,11 +1,11 @@
 package socials
 
 import (
-	"awesomeProject/core"
 	"fmt"
 	"google.golang.org/api/drive/v3"
 	"gopkg.in/yaml.v3"
 	"io"
+	"lebot/core"
 )
 
 type Link struct {
