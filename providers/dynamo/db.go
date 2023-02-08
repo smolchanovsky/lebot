@@ -14,7 +14,7 @@ func NewDb() (*dynamo.DB, error) {
 		return nil, err
 	}
 
-	key, err := secrets.GetSecret(keyId)
+	key, err := secrets.GetSecret(secrets.AwsKeyPath)
 	if err != nil {
 		return nil, err
 	}
