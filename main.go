@@ -32,26 +32,33 @@ func main() {
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = 60
 
+	log.Print("listening updates...")
 	updates := bot.GetUpdatesChan(updateConfig)
 
 	for update := range updates {
+		log.Printf("new update '%d'", update.UpdateID)
+
 		if update.Message != nil {
-			chat, err := core.GetChat(db, update.Message.Chat.ID)
+			chatId := update.Message.Chat.ID
+			text := update.Message.Text
+			log.Printf("new message in '%d' chat: %s", chatId, text)
+
+			chat, err := core.GetChat(db, chatId)
 			if err != nil {
-				tg.SendFatalErr(bot, update.Message.Chat.ID, err)
+				tg.SendFatalErr(bot, chatId, err)
 				break
 			}
 
-			switch update.Message.Text {
+			switch text {
 			case "/start":
-				chat, err = greeting.CreateChat(db, update.Message.Chat.ID)
+				chat, err = greeting.CreateChat(db, chat.Id)
 				if err != nil {
 					tg.SendFatalErr(bot, chat.Id, err)
 					break
 				}
 
 				greetingText := greeting.GetGreeting(chat)
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, greetingText)
+				msg := tgbotapi.NewMessage(chat.Id, greetingText)
 				tg.SendMsg(bot, msg)
 				continue
 			case "/files":
@@ -61,17 +68,18 @@ func main() {
 					break
 				}
 
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Files:")
+				msg := tgbotapi.NewMessage(chat.Id, "Files:")
 				rows := make([][]tgbotapi.InlineKeyboardButton, len(files))
 				if len(files) == 0 {
-					msg = tgbotapi.NewMessage(update.Message.Chat.ID, "No files")
+					msg = tgbotapi.NewMessage(chat.Id, "No files")
 				} else {
 					for i, file := range files {
-						event, err := json.Marshal(content.FileEvent{Type: "DownloadFile", FileId: file.Id})
+						eventJson, err := json.Marshal(content.FileEvent{Type: content.GetFileEvent, FileId: file.Id})
 						if err != nil {
 							tg.SendFatalErr(bot, chat.Id, err)
 						}
-						rows[i] = tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData(file.Name, string(event)))
+						rows[i] = tgbotapi.NewInlineKeyboardRow(
+							tgbotapi.NewInlineKeyboardButtonData(file.Name, string(eventJson)))
 					}
 				}
 				msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(rows...)
@@ -101,7 +109,7 @@ func main() {
 
 			switch chat.State {
 			case core.Start:
-				err := greeting.SaveTeacherEmail(db, chat, update.Message.Text)
+				err := greeting.SaveTeacherEmail(db, chat, text)
 				if err != nil {
 					tg.SendFatalErr(bot, chat.Id, err)
 					break
@@ -109,32 +117,37 @@ func main() {
 
 				var msg tgbotapi.MessageConfig
 				if err == greeting.ErrInvalidEmail {
-					msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Enter valid teacher gmail")
+					msg = tgbotapi.NewMessage(chat.Id, "Enter valid teacher gmail")
 				} else if err != nil {
-					msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Error")
+					msg = tgbotapi.NewMessage(chat.Id, "Error")
 				} else {
-					msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Ready to use")
+					msg = tgbotapi.NewMessage(chat.Id, "Ready to use")
 				}
 				tg.SendMsg(bot, msg)
 				continue
 			}
 		} else if update.CallbackQuery != nil {
-			chat, err := core.GetChat(db, update.CallbackQuery.Message.Chat.ID)
+			chatId := update.CallbackQuery.Message.Chat.ID
+			data := update.CallbackQuery.Data
+			log.Printf("new callback in '%d' chat: %s", chatId, data)
+
+			chat, err := core.GetChat(db, chatId)
 			if err != nil {
-				tg.SendFatalErr(bot, update.Message.Chat.ID, err)
+				tg.SendFatalErr(bot, chatId, err)
 				break
 			}
 
-			var event *core.Event
-			err = json.Unmarshal([]byte(update.CallbackQuery.Data), event)
+			var event core.Event
+			err = json.Unmarshal([]byte(data), &event)
 			if err != nil {
 				tg.SendFatalErr(bot, chat.Id, err)
 			}
+			log.Printf("callback is '%s' event", event.Type)
 
 			switch event.Type {
 			case content.GetFileEvent:
-				var getFileEvent *content.FileEvent
-				err = json.Unmarshal([]byte(update.CallbackQuery.Data), getFileEvent)
+				var getFileEvent content.FileEvent
+				err = json.Unmarshal([]byte(data), &getFileEvent)
 
 				fileMeta, err := content.GetFileMeta(disk, getFileEvent.FileId)
 				if err != nil {
@@ -151,7 +164,7 @@ func main() {
 					doc := tgbotapi.NewDocument(chat.Id, tgbotapi.FileBytes{Name: fileMeta.Name, Bytes: fileContent})
 					tg.SendDoc(bot, doc)
 				} else {
-					msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, fileMeta.WebContentLink)
+					msg := tgbotapi.NewMessage(chat.Id, fileMeta.WebContentLink)
 					tg.SendMsg(bot, msg)
 				}
 				continue

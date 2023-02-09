@@ -16,5 +16,5 @@ type Replica struct {
 }
 
 type Event struct {
-	Type string
+	Type int
 }

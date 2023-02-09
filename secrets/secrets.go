@@ -3,6 +3,7 @@ package secrets
 import (
 	"os"
 	"path"
+	"strings"
 )
 
 const TgmTokenPath = "secrets/telegram-api"
@@ -18,5 +19,5 @@ func GetSecret(filePath string) (string, error) {
 
 	fullPath := path.Join(homeDir, filePath)
 	data, err := os.ReadFile(fullPath)
-	return string(data), err
+	return strings.TrimSpace(string(data)), err
 }

@@ -19,12 +19,16 @@ func NewBotApi() (*tgbotapi.BotAPI, error) {
 func SendMsg(bot *tgbotapi.BotAPI, msg tgbotapi.MessageConfig) {
 	if _, err := bot.Send(msg); err != nil {
 		log.Print("", err)
+	} else {
+		log.Printf("message sent: %s", msg.Text)
 	}
 }
 
-func SendDoc(bot *tgbotapi.BotAPI, msg tgbotapi.DocumentConfig) {
-	if _, err := bot.Send(msg); err != nil {
+func SendDoc(bot *tgbotapi.BotAPI, doc tgbotapi.DocumentConfig) {
+	if _, err := bot.Send(doc); err != nil {
 		log.Print("", err)
+	} else {
+		log.Printf("document sent")
 	}
 }
 

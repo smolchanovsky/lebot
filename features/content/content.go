@@ -7,10 +7,10 @@ import (
 	"lebot/core"
 )
 
-const GetFileEvent = "getFileEvent"
+const GetFileEvent = 1
 
 type FileEvent struct {
-	Type   string
+	Type   int
 	FileId string
 }
 
