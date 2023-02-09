@@ -51,14 +51,13 @@ func main() {
 
 			switch text {
 			case "/start":
-				chat, err = greeting.CreateChat(db, chat.Id)
+				chat, err = greeting.CreateChat(db, chatId)
 				if err != nil {
-					tg.SendFatalErr(bot, chat.Id, err)
+					tg.SendFatalErr(bot, chatId, err)
 					continue
 				}
 
-				greetingText := greeting.GetGreeting(chat)
-				msg := tgbotapi.NewMessage(chat.Id, greetingText)
+				msg := tgbotapi.NewMessage(chat.Id, core.GetMessage("greeting.start"))
 				tg.SendMsg(bot, msg)
 				continue
 			case "/files":
@@ -68,10 +67,11 @@ func main() {
 					continue
 				}
 
-				msg := tgbotapi.NewMessage(chat.Id, "Files:")
+				msg := tgbotapi.NewMessage(chat.Id, core.GetMessage("files.list"))
 				rows := make([][]tgbotapi.InlineKeyboardButton, len(files))
 				if len(files) == 0 {
-					msg = tgbotapi.NewMessage(chat.Id, "No files")
+					msg = tgbotapi.NewMessage(chat.Id, core.GetMessage("files.emptyList"))
+					tg.SendMsg(bot, msg)
 				} else {
 					for i, file := range files {
 						eventJson, err := json.Marshal(content.FileEvent{Type: content.GetFileEvent, FileId: file.Id})
@@ -81,9 +81,9 @@ func main() {
 						rows[i] = tgbotapi.NewInlineKeyboardRow(
 							tgbotapi.NewInlineKeyboardButtonData(file.Name, string(eventJson)))
 					}
+					msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(rows...)
+					tg.SendMsg(bot, msg)
 				}
-				msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(rows...)
-				tg.SendMsg(bot, msg)
 				continue
 			case "/links":
 				links, err := socials.GetLinks(disk, chat)
@@ -92,37 +92,37 @@ func main() {
 					continue
 				}
 
-				msg := tgbotapi.NewMessage(chat.Id, "Links:")
+				msg := tgbotapi.NewMessage(chat.Id, core.GetMessage("links.list"))
 				rows := make([][]tgbotapi.InlineKeyboardButton, len(links))
 				if len(links) == 0 {
-					msg = tgbotapi.NewMessage(chat.Id, "No links :(")
+					msg = tgbotapi.NewMessage(chat.Id, core.GetMessage("links.emptyFiles"))
+					tg.SendMsg(bot, msg)
 				} else {
 					for i, link := range links {
 						rows[i] = tgbotapi.NewInlineKeyboardRow(
 							tgbotapi.NewInlineKeyboardButtonURL(link.Name, link.Url))
 					}
+					msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(rows...)
+					tg.SendMsg(bot, msg)
 				}
-				msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(rows...)
-				tg.SendMsg(bot, msg)
 				continue
 			}
 
 			switch chat.State {
 			case core.Start:
 				err := greeting.SaveTeacherEmail(db, chat, text)
-				if err != nil {
-					tg.SendFatalErr(bot, chat.Id, err)
-					continue
-				}
 
 				var msg tgbotapi.MessageConfig
 				if err == greeting.ErrInvalidEmail {
-					msg = tgbotapi.NewMessage(chat.Id, "Enter valid teacher gmail")
+					msg = tgbotapi.NewMessage(chat.Id, core.GetMessage("greeting.invalidEmail"))
+				} else if err == greeting.ErrEmailNotFound {
+					msg = tgbotapi.NewMessage(chat.Id, core.GetMessage("greeting.emailNotFound"))
 				} else if err != nil {
-					msg = tgbotapi.NewMessage(chat.Id, "Error")
+					msg = tgbotapi.NewMessage(chat.Id, core.GetMessage("errors.unknown"))
 				} else {
-					msg = tgbotapi.NewMessage(chat.Id, "Ready to use")
+					msg = tgbotapi.NewMessage(chat.Id, core.GetMessage("greeting.finish"))
 				}
+
 				tg.SendMsg(bot, msg)
 				continue
 			}

@@ -1,0 +1,33 @@
+# greeting
+
+- id: greeting.start
+  text: "Hi there! 🤗 Welcome to LeBot! First, tell me your teacher's e-mail, please"
+- id: greeting.invalidEmail
+  text: "Oops, invalid e-mail, try one more time"
+- id: greeting.emailNotFound
+  text: "Hmm, I'm not sure this person exists in my system 🤔 Ask you tutor for his/her actual e-mail"
+- id: greeting.finish
+  text: |
+    I got it! 👍 You're all set now! ✨
+    Let's have a look at the features you can find here:
+    - Useful content
+    - Socials
+
+# files
+
+- id: files.list
+  text: "Content for you:"
+- id: files.emptyList
+  text: "Content not found ☹️"
+
+# links
+
+- id: links.list
+  text: "Your tutor socials:"
+- id: files.emptyList
+  text: "Links not found ☹️"
+
+# errors
+
+- id: errors.unknown
+  text: "Oops, unknown error 😬 Please, inform your tutor"

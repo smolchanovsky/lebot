@@ -16,7 +16,11 @@ func GetChat(db *dynamo.DB, id int64) (*Chat, error) {
 		return nil, err
 	}
 
-	if len(chats) != 1 {
+	if len(chats) == 0 {
+		return nil, nil
+	}
+
+	if len(chats) > 1 {
 		return nil, ErrChatConflict
 	}
 
