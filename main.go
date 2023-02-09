@@ -46,7 +46,7 @@ func main() {
 			chat, err := core.GetChat(db, chatId)
 			if err != nil {
 				tg.SendFatalErr(bot, chatId, err)
-				break
+				continue
 			}
 
 			switch text {
@@ -54,7 +54,7 @@ func main() {
 				chat, err = greeting.CreateChat(db, chat.Id)
 				if err != nil {
 					tg.SendFatalErr(bot, chat.Id, err)
-					break
+					continue
 				}
 
 				greetingText := greeting.GetGreeting(chat)
@@ -65,7 +65,7 @@ func main() {
 				files, err := content.GetFiles(disk, chat)
 				if err != nil {
 					tg.SendFatalErr(bot, chat.Id, err)
-					break
+					continue
 				}
 
 				msg := tgbotapi.NewMessage(chat.Id, "Files:")
@@ -89,7 +89,7 @@ func main() {
 				links, err := socials.GetLinks(disk, chat)
 				if err != nil {
 					tg.SendFatalErr(bot, chat.Id, err)
-					break
+					continue
 				}
 
 				msg := tgbotapi.NewMessage(chat.Id, "Links:")
@@ -112,7 +112,7 @@ func main() {
 				err := greeting.SaveTeacherEmail(db, chat, text)
 				if err != nil {
 					tg.SendFatalErr(bot, chat.Id, err)
-					break
+					continue
 				}
 
 				var msg tgbotapi.MessageConfig
@@ -134,7 +134,7 @@ func main() {
 			chat, err := core.GetChat(db, chatId)
 			if err != nil {
 				tg.SendFatalErr(bot, chatId, err)
-				break
+				continue
 			}
 
 			var event core.Event
