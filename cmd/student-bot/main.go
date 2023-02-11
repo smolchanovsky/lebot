@@ -175,5 +175,5 @@ func main() {
 }
 
 func GetMessage(id string) string {
-	return message.GetMessage(".cmd/student-bot/resources/messages.yml", id)
+	return message.GetMessage("./cmd/student-bot/resources/messages.yml", id)
 }
