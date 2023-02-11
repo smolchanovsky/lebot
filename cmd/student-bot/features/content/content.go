@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"google.golang.org/api/drive/v3"
 	"io"
-	"lebot/core"
+	"lebot/cmd/student-bot/core"
 )
 
 const GetFileEvent = 1

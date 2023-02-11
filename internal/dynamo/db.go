@@ -5,16 +5,16 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/guregu/dynamo"
-	"lebot/secrets"
+	"lebot/internal/secret"
 )
 
 func NewDb() (*dynamo.DB, error) {
-	keyId, err := secrets.GetSecret(secrets.AwsKeyIdPath)
+	keyId, err := secret.GetSecret(secret.AwsKeyIdPath)
 	if err != nil {
 		return nil, err
 	}
 
-	key, err := secrets.GetSecret(secrets.AwsKeyPath)
+	key, err := secret.GetSecret(secret.AwsKeyPath)
 	if err != nil {
 		return nil, err
 	}

@@ -1,5 +1,0 @@
-replicas:
-  - id: "greeting"
-    text: "Hello! Enter teacher email (2)"
-  - id: "introduction"
-    test: "Ready (2)"

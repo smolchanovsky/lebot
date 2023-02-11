@@ -2,12 +2,12 @@ package tg
 
 import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"lebot/secrets"
+	"lebot/internal/secret"
 	"log"
 )
 
 func NewBotApi() (*tgbotapi.BotAPI, error) {
-	tgmToken, err := secrets.GetSecret(secrets.TgmTokenPath)
+	tgmToken, err := secret.GetSecret(secret.TgmTokenPath)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +37,7 @@ func SendText(bot *tgbotapi.BotAPI, chatId int64, text string) {
 	SendMsg(bot, msg)
 }
 
-func SendFatalErr(bot *tgbotapi.BotAPI, chatId int64, err error) {
+func SendFatalErr(bot *tgbotapi.BotAPI, chatId int64, text string, err error) {
 	log.Print("unexpected error", err)
-	SendText(bot, chatId, "Unexpected error")
+	SendText(bot, chatId, text)
 }

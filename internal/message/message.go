@@ -1,4 +1,4 @@
-package core
+package message
 
 import (
 	"errors"
@@ -10,15 +10,15 @@ import (
 	"runtime"
 )
 
-type Message struct {
+type message struct {
 	Id   string
 	Text string
 }
 
 var ErrMessageNotFound = errors.New("message not found")
 
-func GetMessage(id string) string {
-	message, err := GetMessageOrDefault(id)
+func GetMessage(configPath string, id string) string {
+	message, err := GetMessageOrDefault(configPath, id)
 	if err != nil {
 		log.Print("message not found", err)
 		return "Oops, unknown error 😬 Please, inform your tutor"
@@ -26,17 +26,17 @@ func GetMessage(id string) string {
 	return *message
 }
 
-func GetMessageOrDefault(id string) (*string, error) {
+func GetMessageOrDefault(configPath string, id string) (*string, error) {
 	_, basePath, _, _ := runtime.Caller(0)
-	baseDir := filepath.Join(filepath.Dir(basePath), "../")
+	baseDir := filepath.Join(filepath.Dir(basePath), "../../")
 
-	fullPath := path.Join(baseDir, "resources/messages.yml")
+	fullPath := path.Join(baseDir, configPath)
 	data, err := os.ReadFile(fullPath)
 	if err != nil {
 		return nil, err
 	}
 
-	var messages []*Message
+	var messages []*message
 	err = yaml.Unmarshal(data, &messages)
 	if err != nil {
 		return nil, err

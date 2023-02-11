@@ -3,13 +3,14 @@ package main
 import (
 	"encoding/json"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"lebot/core"
-	"lebot/features/content"
-	"lebot/features/greeting"
-	"lebot/features/socials"
-	"lebot/providers/drive"
-	"lebot/providers/dynamo"
-	"lebot/providers/tg"
+	"lebot/cmd/student-bot/core"
+	"lebot/cmd/student-bot/features/content"
+	"lebot/cmd/student-bot/features/join"
+	"lebot/cmd/student-bot/features/refer"
+	"lebot/internal/drive"
+	"lebot/internal/dynamo"
+	"lebot/internal/message"
+	"lebot/internal/tg"
 	"log"
 )
 
@@ -45,38 +46,38 @@ func main() {
 
 			chat, err := core.GetChat(db, chatId)
 			if err != nil {
-				tg.SendFatalErr(bot, chatId, err)
+				tg.SendFatalErr(bot, chatId, GetMessage("errors.unknown"), err)
 				continue
 			}
 
 			switch text {
 			case "/start":
-				chat, err = greeting.CreateChat(db, chatId)
+				chat, err = join.CreateChat(db, chatId)
 				if err != nil {
-					tg.SendFatalErr(bot, chatId, err)
+					tg.SendFatalErr(bot, chatId, GetMessage("errors.unknown"), err)
 					continue
 				}
 
-				msg := tgbotapi.NewMessage(chat.Id, core.GetMessage("greeting.start"))
+				msg := tgbotapi.NewMessage(chat.Id, GetMessage("join.start"))
 				tg.SendMsg(bot, msg)
 				continue
 			case "/files":
 				files, err := content.GetFiles(disk, chat)
 				if err != nil {
-					tg.SendFatalErr(bot, chat.Id, err)
+					tg.SendFatalErr(bot, chat.Id, GetMessage("errors.unknown"), err)
 					continue
 				}
 
-				msg := tgbotapi.NewMessage(chat.Id, core.GetMessage("files.list"))
+				msg := tgbotapi.NewMessage(chat.Id, GetMessage("files.list"))
 				rows := make([][]tgbotapi.InlineKeyboardButton, len(files))
 				if len(files) == 0 {
-					msg = tgbotapi.NewMessage(chat.Id, core.GetMessage("files.emptyList"))
+					msg = tgbotapi.NewMessage(chat.Id, GetMessage("files.emptyList"))
 					tg.SendMsg(bot, msg)
 				} else {
 					for i, file := range files {
 						eventJson, err := json.Marshal(content.FileEvent{Type: content.GetFileEvent, FileId: file.Id})
 						if err != nil {
-							tg.SendFatalErr(bot, chat.Id, err)
+							tg.SendFatalErr(bot, chat.Id, GetMessage("errors.unknown"), err)
 						}
 						rows[i] = tgbotapi.NewInlineKeyboardRow(
 							tgbotapi.NewInlineKeyboardButtonData(file.Name, string(eventJson)))
@@ -86,16 +87,16 @@ func main() {
 				}
 				continue
 			case "/links":
-				links, err := socials.GetLinks(disk, chat)
+				links, err := refer.GetLinks(disk, chat)
 				if err != nil {
-					tg.SendFatalErr(bot, chat.Id, err)
+					tg.SendFatalErr(bot, chat.Id, GetMessage("errors.unknown"), err)
 					continue
 				}
 
-				msg := tgbotapi.NewMessage(chat.Id, core.GetMessage("links.list"))
+				msg := tgbotapi.NewMessage(chat.Id, GetMessage("links.list"))
 				rows := make([][]tgbotapi.InlineKeyboardButton, len(links))
 				if len(links) == 0 {
-					msg = tgbotapi.NewMessage(chat.Id, core.GetMessage("links.emptyFiles"))
+					msg = tgbotapi.NewMessage(chat.Id, GetMessage("links.emptyFiles"))
 					tg.SendMsg(bot, msg)
 				} else {
 					for i, link := range links {
@@ -110,17 +111,17 @@ func main() {
 
 			switch chat.State {
 			case core.Start:
-				err := greeting.SaveTeacherEmail(db, chat, text)
+				err := join.SaveTeacherEmail(db, chat, text)
 
 				var msg tgbotapi.MessageConfig
-				if err == greeting.ErrInvalidEmail {
-					msg = tgbotapi.NewMessage(chat.Id, core.GetMessage("greeting.invalidEmail"))
-				} else if err == greeting.ErrEmailNotFound {
-					msg = tgbotapi.NewMessage(chat.Id, core.GetMessage("greeting.emailNotFound"))
+				if err == join.ErrInvalidEmail {
+					msg = tgbotapi.NewMessage(chat.Id, GetMessage("join.invalidEmail"))
+				} else if err == join.ErrEmailNotFound {
+					msg = tgbotapi.NewMessage(chat.Id, GetMessage("join.emailNotFound"))
 				} else if err != nil {
-					msg = tgbotapi.NewMessage(chat.Id, core.GetMessage("errors.unknown"))
+					msg = tgbotapi.NewMessage(chat.Id, GetMessage("errors.unknown"))
 				} else {
-					msg = tgbotapi.NewMessage(chat.Id, core.GetMessage("greeting.finish"))
+					msg = tgbotapi.NewMessage(chat.Id, GetMessage("join.finish"))
 				}
 
 				tg.SendMsg(bot, msg)
@@ -133,14 +134,14 @@ func main() {
 
 			chat, err := core.GetChat(db, chatId)
 			if err != nil {
-				tg.SendFatalErr(bot, chatId, err)
+				tg.SendFatalErr(bot, chatId, GetMessage("errors.unknown"), err)
 				continue
 			}
 
 			var event core.Event
 			err = json.Unmarshal([]byte(data), &event)
 			if err != nil {
-				tg.SendFatalErr(bot, chat.Id, err)
+				tg.SendFatalErr(bot, chat.Id, GetMessage("errors.unknown"), err)
 			}
 			log.Printf("callback is '%s' event", event.Type)
 
@@ -151,14 +152,14 @@ func main() {
 
 				fileMeta, err := content.GetFileMeta(disk, getFileEvent.FileId)
 				if err != nil {
-					tg.SendFatalErr(bot, chat.Id, err)
+					tg.SendFatalErr(bot, chat.Id, GetMessage("errors.unknown"), err)
 				}
 
 				const maxFileSize = 5000000
 				if fileMeta.Size <= maxFileSize {
 					fileContent, err := content.GetFileContent(disk, fileMeta.Id)
 					if err != nil {
-						tg.SendFatalErr(bot, chat.Id, err)
+						tg.SendFatalErr(bot, chat.Id, GetMessage("errors.unknown"), err)
 					}
 
 					doc := tgbotapi.NewDocument(chat.Id, tgbotapi.FileBytes{Name: fileMeta.Name, Bytes: fileContent})
@@ -171,4 +172,8 @@ func main() {
 			}
 		}
 	}
+}
+
+func GetMessage(id string) string {
+	return message.GetMessage(".cmd/student-bot/resources/messages.yml", id)
 }

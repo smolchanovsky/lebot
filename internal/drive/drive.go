@@ -5,13 +5,13 @@ import (
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/option"
-	"lebot/secrets"
+	"lebot/internal/secret"
 )
 
 func NewService() (*drive.Service, error) {
 	ctx := context.Background()
 
-	token, err := secrets.GetSecret(secrets.DriveTokenPath)
+	token, err := secret.GetSecret(secret.DriveTokenPath)
 	if err != nil {
 		return nil, err
 	}

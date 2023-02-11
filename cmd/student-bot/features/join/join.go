@@ -1,9 +1,9 @@
-package greeting
+package join
 
 import (
 	"errors"
 	"github.com/guregu/dynamo"
-	"lebot/core"
+	"lebot/cmd/student-bot/core"
 	"net/mail"
 	"strings"
 )

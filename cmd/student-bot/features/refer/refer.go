@@ -1,11 +1,11 @@
-package socials
+package refer
 
 import (
 	"fmt"
 	"google.golang.org/api/drive/v3"
 	"gopkg.in/yaml.v3"
 	"io"
-	"lebot/core"
+	"lebot/cmd/student-bot/core"
 )
 
 type Link struct {
