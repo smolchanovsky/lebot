@@ -41,7 +41,7 @@ func (base *Service) GetLessons(chat *core.Chat, count int64) ([]*Lesson, error)
 	}
 
 	events, err := base.calSrv.Events.List(chatCal.CalId).TimeZone(defaultTimeZone).
-		TimeMin(minTime).MaxResults(count).Do()
+		TimeMin(minTime).SingleEvents(true).MaxResults(count).Do()
 
 	var lessons []*Lesson
 	for _, event := range events.Items {

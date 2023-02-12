@@ -77,7 +77,7 @@ func (base *Service) GetLessonsSoon() ([]*Reminder, error) {
 		}
 
 		events, err := base.calSrv.Events.List(cal.Id).TimeZone(defaultTimeZone).
-			TimeMin(minTime).TimeMax(maxTime).Do()
+			TimeMin(minTime).TimeMax(maxTime).SingleEvents(true).Do()
 		if err != nil {
 			log.Print("error while obtain events", err)
 			continue
