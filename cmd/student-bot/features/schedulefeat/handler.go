@@ -34,8 +34,9 @@ func (base *Handler) Handle(chat *core.Chat) {
 		text = fmt.Sprintf("Next %d lessons:\n", count)
 		for _, lesson := range lessons {
 			line := fmt.Sprintf(
-				"*%s:* %s - %s",
+				"*%s %s:* %s - %s",
 				lesson.start.Format("Jan-02"),
+				lesson.start.Weekday(),
 				lesson.start.Format("10:50"),
 				lesson.end.Format("10:50"))
 			text += line + "\n"
