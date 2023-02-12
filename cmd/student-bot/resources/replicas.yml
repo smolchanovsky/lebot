@@ -1,4 +1,4 @@
-# join
+# Join
 
 - id: join.start
   text: "Hi there! 🤗 Welcome to LeBot! First, tell me your teacher's e-mail, please"
@@ -13,26 +13,28 @@
     - Useful content
     - Socials
 
-# files
+# Content
 
-- id: files.list
+- id: content.listSummary
   text: "Content for you:"
-- id: files.emptyList
+- id: content.emptyList
   text: "Content not found ☹️"
 
-# links
+# Link
 
-- id: links.list
-  text: "Your tutor refer:"
-- id: files.emptyList
+- id: link.listSummary
+  text: "Your tutor link:"
+- id: link.emptyList
   text: "Links not found ☹️"
 
-# reminder
+# Reminder
 
-- id: reminders.lessonSoon
+- id: reminder.lessonSoon
   text: "What's up! Your class is in one hour. Get ready! 🤓"
 
-# errors
+# Error
 
-- id: errors.unknown
+- id: error.invalidCommand
+  text: "This command doesn't exist. Please, choose one from the menu"
+- id: error.unknown
   text: "Oops, unknown error 😬 Please, inform your tutor"

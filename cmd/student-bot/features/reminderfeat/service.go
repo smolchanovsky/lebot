@@ -1,4 +1,4 @@
-package reminder
+package reminderfeat
 
 import (
 	"github.com/guregu/dynamo"
@@ -10,7 +10,6 @@ import (
 
 type Reminder struct {
 	ChatId int64
-	Type   string
 }
 
 type ChatCal struct {
@@ -18,23 +17,32 @@ type ChatCal struct {
 	CalId  string
 }
 
+type Service struct {
+	calSrv *calendar.Service
+	db     *dynamo.DB
+}
+
+func NewService(calSrv *calendar.Service, db *dynamo.DB) *Service {
+	return &Service{calSrv: calSrv, db: db}
+}
+
 const defaultTimeZone = "Europe/Moscow"
 
-func Init(srv *calendar.Service, db *dynamo.DB, chat *core.Chat) error {
-	cal, err := srv.Calendars.Insert(&calendar.Calendar{
+func (base *Service) InitNewChat(chat *core.Chat) error {
+	cal, err := base.calSrv.Calendars.Insert(&calendar.Calendar{
 		Summary:  chat.UserName,
 		TimeZone: defaultTimeZone}).Do()
 	if err != nil {
 		return err
 	}
 
-	table := db.Table("chatCals")
+	table := base.db.Table("chatCals")
 	err = table.Put(ChatCal{CalId: cal.Id, ChatId: chat.Id}).Run()
 	if err != nil {
 		return err
 	}
 
-	_, err = srv.Acl.Insert(cal.Id, &calendar.AclRule{
+	_, err = base.calSrv.Acl.Insert(cal.Id, &calendar.AclRule{
 		Role: "owner",
 		Scope: &calendar.AclRuleScope{
 			Type:  "user",
@@ -47,17 +55,17 @@ func Init(srv *calendar.Service, db *dynamo.DB, chat *core.Chat) error {
 	return nil
 }
 
-func GetStartingLessons(srv *calendar.Service, db *dynamo.DB) ([]*Reminder, error) {
+func (base *Service) GetLessonsSoon() ([]*Reminder, error) {
 	now := time.Now()
 	minTime := now.Format(time.RFC3339)
 	maxTime := now.Add(time.Hour).Format(time.RFC3339)
 
-	calList, err := srv.CalendarList.List().Do()
+	calList, err := base.calSrv.CalendarList.List().Do()
 	if err != nil {
 		return nil, err
 	}
 
-	table := db.Table("chatCals")
+	table := base.db.Table("chatCals")
 
 	reminders := []*Reminder{}
 	for _, cal := range calList.Items {
@@ -68,7 +76,7 @@ func GetStartingLessons(srv *calendar.Service, db *dynamo.DB) ([]*Reminder, erro
 			continue
 		}
 
-		events, err := srv.Events.List(cal.Id).TimeZone(defaultTimeZone).
+		events, err := base.calSrv.Events.List(cal.Id).TimeZone(defaultTimeZone).
 			TimeMin(minTime).TimeMax(maxTime).Do()
 		if err != nil {
 			log.Print("error while obtain events", err)
@@ -76,7 +84,7 @@ func GetStartingLessons(srv *calendar.Service, db *dynamo.DB) ([]*Reminder, erro
 		}
 
 		for range events.Items {
-			reminders = append(reminders, &Reminder{ChatId: chatCal.ChatId, Type: "lessonSoon"})
+			reminders = append(reminders, &Reminder{ChatId: chatCal.ChatId})
 		}
 	}
 

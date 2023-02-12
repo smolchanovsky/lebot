@@ -1,4 +1,4 @@
-package join
+package joinfeat
 
 import (
 	"errors"
@@ -8,8 +8,16 @@ import (
 	"strings"
 )
 
-func CreateChat(db *dynamo.DB, chatId int64, userName string) (*core.Chat, error) {
-	table := db.Table("chats")
+type Service struct {
+	db *dynamo.DB
+}
+
+func NewService(db *dynamo.DB) *Service {
+	return &Service{db: db}
+}
+
+func (base *Service) SaveChat(chatId int64, userName string) (*core.Chat, error) {
+	table := base.db.Table("chats")
 
 	chat := core.Chat{
 		Id:           chatId,
@@ -29,7 +37,7 @@ func CreateChat(db *dynamo.DB, chatId int64, userName string) (*core.Chat, error
 var ErrInvalidEmail = errors.New("invalid email")
 var ErrEmailNotFound = errors.New("email not found")
 
-func SaveTeacherEmail(db *dynamo.DB, chat *core.Chat, teacherEmail string) error {
+func (base *Service) SaveTeacherEmail(chat *core.Chat, teacherEmail string) error {
 	email := strings.ToLower(teacherEmail)
 
 	_, err := mail.ParseAddress(email)
@@ -37,7 +45,7 @@ func SaveTeacherEmail(db *dynamo.DB, chat *core.Chat, teacherEmail string) error
 		return ErrInvalidEmail
 	}
 
-	teachers := db.Table("teachers")
+	teachers := base.db.Table("teachers")
 	count, err := teachers.Get("Email", email).Count()
 	if err != nil {
 		return err
@@ -46,7 +54,7 @@ func SaveTeacherEmail(db *dynamo.DB, chat *core.Chat, teacherEmail string) error
 		return ErrEmailNotFound
 	}
 
-	chats := db.Table("chats")
+	chats := base.db.Table("chats")
 	chat.TeacherEmail = strings.ToLower(email)
 	chat.State = "ready"
 	err = chats.Put(chat).Run()

@@ -1,32 +1,22 @@
-package message
+package reply
 
 import (
 	"errors"
 	"gopkg.in/yaml.v3"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
 	"runtime"
 )
 
-type message struct {
+type replica struct {
 	Id   string
 	Text string
 }
 
-var ErrMessageNotFound = errors.New("message not found")
+var ErrReplicaNotFound = errors.New("reply not found")
 
-func GetMessage(configPath string, id string) string {
-	message, err := GetMessageOrDefault(configPath, id)
-	if err != nil {
-		log.Print("message not found", err)
-		return "Oops, unknown error 😬 Please, inform your tutor"
-	}
-	return *message
-}
-
-func GetMessageOrDefault(configPath string, id string) (*string, error) {
+func LoadReplica(configPath string, id string) (*string, error) {
 	_, basePath, _, _ := runtime.Caller(0)
 	baseDir := filepath.Join(filepath.Dir(basePath), "../../")
 
@@ -36,7 +26,7 @@ func GetMessageOrDefault(configPath string, id string) (*string, error) {
 		return nil, err
 	}
 
-	var messages []*message
+	var messages []*replica
 	err = yaml.Unmarshal(data, &messages)
 	if err != nil {
 		return nil, err
@@ -48,5 +38,5 @@ func GetMessageOrDefault(configPath string, id string) (*string, error) {
 		}
 	}
 
-	return nil, ErrMessageNotFound
+	return nil, ErrReplicaNotFound
 }

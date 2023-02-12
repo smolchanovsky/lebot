@@ -2,34 +2,34 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/robfig/cron/v3"
 	"lebot/cmd/student-bot/core"
-	"lebot/cmd/student-bot/features/content"
-	"lebot/cmd/student-bot/features/join"
-	"lebot/cmd/student-bot/features/refer"
-	"lebot/cmd/student-bot/features/reminder"
-	"lebot/internal/drive"
-	"lebot/internal/dynamo"
-	"lebot/internal/gcalendar"
-	"lebot/internal/message"
+	"lebot/cmd/student-bot/features/joinfeat"
+	"lebot/cmd/student-bot/features/linkfeat"
+	"lebot/cmd/student-bot/features/materialfeat"
+	"lebot/cmd/student-bot/features/reminderfeat"
+	"lebot/cmd/student-bot/helpers"
+	"lebot/internal/dynamodb"
+	"lebot/internal/googlecalendar"
+	"lebot/internal/googledrive"
 	"lebot/internal/tg"
 	"log"
 )
 
 func main() {
-	db, err := dynamo.NewDb()
+	db, err := dynamodb.NewDb()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	disk, err := drive.NewService()
+	diskSrv, err := googledrive.NewService()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	calSrv, err := gcalendar.GetService()
+	calSrv, err := googlecalendar.NewService()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -39,20 +39,23 @@ func main() {
 		log.Fatal(err)
 	}
 
-	c := cron.New()
-	c.AddFunc("0 * * * *", func() {
-		reminders, err := reminder.GetStartingLessons(calSrv, db)
-		if err != nil {
-			log.Print(err)
-			return
-		}
+	joinSrv := joinfeat.NewService(db)
+	joinHandler := joinfeat.NewHandler(joinSrv, bot)
 
-		for _, reminder := range reminders {
-			text := GetMessage(fmt.Sprintf("reminders.%s", reminder.Type))
-			tg.SendText(bot, reminder.ChatId, text)
-		}
+	linkSrv := linkfeat.NewService(diskSrv)
+	linkHandler := linkfeat.NewHandler(linkSrv, bot)
+
+	materialSrv := materialfeat.NewService(diskSrv)
+	materialHandler := materialfeat.NewHandler(materialSrv, bot)
+
+	reminderSrv := reminderfeat.NewService(calSrv, db)
+	reminderHandler := reminderfeat.NewHandler(reminderSrv, bot)
+
+	scheduler := cron.New()
+	scheduler.AddFunc("0 * * * *", func() {
+		reminderHandler.HandleLessonsSoon()
 	})
-	c.Start()
+	scheduler.Start()
 
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = 60
@@ -65,141 +68,93 @@ func main() {
 
 		if update.Message != nil {
 			chatId := update.Message.Chat.ID
-			userName := update.Message.Chat.UserName
 			text := update.Message.Text
-			log.Printf("new message in '%d' chat: %s", chatId, text)
+			log.Printf("new reply in '%d' chat: %s", chatId, text)
 
-			chat, err := core.GetChat(db, chatId)
+			chatOrNil, err := core.GetChat(db, chatId)
 			if err != nil {
-				tg.SendFatalErr(bot, chatId, GetMessage("errors.unknown"), err)
+				helpers.HandleUnknownErr(bot, chatId, err)
 				continue
 			}
+			log.Printf("start processing '%d' chat with new message: %s", chatId, text)
 
-			switch text {
-			case "/start":
-				chat, err = join.CreateChat(db, chatId, userName)
-				if err != nil {
-					tg.SendFatalErr(bot, chatId, GetMessage("errors.unknown"), err)
-					continue
-				}
-
-				msg := tgbotapi.NewMessage(chat.Id, GetMessage("join.start"))
-				tg.SendMsg(bot, msg)
-				continue
-			case "/files":
-				files, err := content.GetFiles(disk, chat)
-				if err != nil {
-					tg.SendFatalErr(bot, chat.Id, GetMessage("errors.unknown"), err)
-					continue
-				}
-
-				msg := tgbotapi.NewMessage(chat.Id, GetMessage("files.list"))
-				rows := make([][]tgbotapi.InlineKeyboardButton, len(files))
-				if len(files) == 0 {
-					msg = tgbotapi.NewMessage(chat.Id, GetMessage("files.emptyList"))
-					tg.SendMsg(bot, msg)
-				} else {
-					for i, file := range files {
-						eventJson, err := json.Marshal(content.FileEvent{Type: content.GetFileEvent, FileId: file.Id})
-						if err != nil {
-							tg.SendFatalErr(bot, chat.Id, GetMessage("errors.unknown"), err)
-						}
-						rows[i] = tgbotapi.NewInlineKeyboardRow(
-							tgbotapi.NewInlineKeyboardButtonData(file.Name, string(eventJson)))
-					}
-					msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(rows...)
-					tg.SendMsg(bot, msg)
-				}
-				continue
-			case "/links":
-				links, err := refer.GetLinks(disk, chat)
-				if err != nil {
-					tg.SendFatalErr(bot, chat.Id, GetMessage("errors.unknown"), err)
-					continue
-				}
-
-				msg := tgbotapi.NewMessage(chat.Id, GetMessage("links.list"))
-				rows := make([][]tgbotapi.InlineKeyboardButton, len(links))
-				if len(links) == 0 {
-					msg = tgbotapi.NewMessage(chat.Id, GetMessage("links.emptyFiles"))
-					tg.SendMsg(bot, msg)
-				} else {
-					for i, link := range links {
-						rows[i] = tgbotapi.NewInlineKeyboardRow(
-							tgbotapi.NewInlineKeyboardButtonURL(link.Name, link.Url))
-					}
-					msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(rows...)
-					tg.SendMsg(bot, msg)
-				}
-				continue
-			}
-
-			switch chat.State {
-			case core.Start:
-				err := join.SaveTeacherEmail(db, chat, text)
-
-				var msg tgbotapi.MessageConfig
-				if err == join.ErrInvalidEmail {
-					msg = tgbotapi.NewMessage(chat.Id, GetMessage("join.invalidEmail"))
-				} else if err == join.ErrEmailNotFound {
-					msg = tgbotapi.NewMessage(chat.Id, GetMessage("join.emailNotFound"))
-				} else if err != nil {
-					msg = tgbotapi.NewMessage(chat.Id, GetMessage("errors.unknown"))
-				} else {
-					reminder.Init(calSrv, db, chat)
-					msg = tgbotapi.NewMessage(chat.Id, GetMessage("join.finish"))
-				}
-
-				tg.SendMsg(bot, msg)
-				continue
+			if len(text) > 0 && text[0] == '/' {
+				HandleCommand(bot, joinHandler, linkHandler, materialHandler, update.Message, chatOrNil)
+			} else {
+				HandleMessage(bot, joinHandler, reminderHandler, chatOrNil, update.Message)
 			}
 		} else if update.CallbackQuery != nil {
 			chatId := update.CallbackQuery.Message.Chat.ID
 			data := update.CallbackQuery.Data
 			log.Printf("new callback in '%d' chat: %s", chatId, data)
 
-			chat, err := core.GetChat(db, chatId)
+			chatOrNil, err := core.GetChat(db, chatId)
 			if err != nil {
-				tg.SendFatalErr(bot, chatId, GetMessage("errors.unknown"), err)
+				helpers.HandleUnknownErr(bot, chatId, err)
 				continue
 			}
+			log.Printf("start processing '%d' chat with new callback: %s", chatId, data)
 
-			var event core.Event
+			var event *core.Event
 			err = json.Unmarshal([]byte(data), &event)
 			if err != nil {
-				tg.SendFatalErr(bot, chat.Id, GetMessage("errors.unknown"), err)
+				helpers.HandleUnknownErr(bot, chatId, err)
 			}
-			log.Printf("callback is '%s' event", event.Type)
 
-			switch event.Type {
-			case content.GetFileEvent:
-				var getFileEvent content.FileEvent
-				err = json.Unmarshal([]byte(data), &getFileEvent)
-
-				fileMeta, err := content.GetFileMeta(disk, getFileEvent.FileId)
-				if err != nil {
-					tg.SendFatalErr(bot, chat.Id, GetMessage("errors.unknown"), err)
-				}
-
-				const maxFileSize = 5000000
-				if fileMeta.Size <= maxFileSize {
-					fileContent, err := content.GetFileContent(disk, fileMeta.Id)
-					if err != nil {
-						tg.SendFatalErr(bot, chat.Id, GetMessage("errors.unknown"), err)
-					}
-
-					doc := tgbotapi.NewDocument(chat.Id, tgbotapi.FileBytes{Name: fileMeta.Name, Bytes: fileContent})
-					tg.SendDoc(bot, doc)
-				} else {
-					msg := tgbotapi.NewMessage(chat.Id, fileMeta.WebContentLink)
-					tg.SendMsg(bot, msg)
-				}
-				continue
-			}
+			HandleCallback(bot, materialHandler, chatOrNil, event, data)
 		}
 	}
 }
 
-func GetMessage(id string) string {
-	return message.GetMessage("./cmd/student-bot/resources/messages.yml", id)
+func HandleCommand(
+	bot *tgbotapi.BotAPI,
+	join *joinfeat.Handler, link *linkfeat.Handler, material *materialfeat.Handler,
+	message *tgbotapi.Message, chat *core.Chat) {
+	log.Printf("Try match message with one of commands")
+	switch message.Text {
+	case "/start":
+		join.HandleStart(message.Chat)
+		break
+	case "/materials":
+		material.Handle(chat)
+		break
+	case "/links":
+		link.Handle(chat)
+		break
+	default:
+		log.Printf("message command not matched")
+		reply := helpers.GetReply(helpers.ErrorInvalidCommandRpl)
+		tg.SendText(bot, chat.Id, reply)
+	}
+}
+
+func HandleMessage(
+	bot *tgbotapi.BotAPI,
+	join *joinfeat.Handler, reminder *reminderfeat.Handler,
+	chat *core.Chat, message *tgbotapi.Message) {
+	log.Printf("Try match message with one of state")
+	switch chat.State {
+	case core.Start:
+		join.HandleEmail(chat, message.Text)
+		reminder.HandleNewChat(chat)
+		break
+	default:
+		log.Printf("message state not matched")
+		reply := helpers.GetReply(helpers.ErrorInvalidCommandRpl)
+		tg.SendText(bot, chat.Id, reply)
+	}
+}
+
+func HandleCallback(
+	bot *tgbotapi.BotAPI,
+	material *materialfeat.Handler,
+	chat *core.Chat, event *core.Event, data string) {
+	log.Printf("Try match callback with one of event")
+	switch event.Type {
+	case materialfeat.GetFileEvent:
+		material.HandleGetFileEvent(chat, data)
+		break
+	default:
+		helpers.HandleUnknownErr(bot, chat.Id, errors.New("callback event not matched"))
+	}
 }

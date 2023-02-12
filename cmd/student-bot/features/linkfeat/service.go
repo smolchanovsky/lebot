@@ -1,4 +1,4 @@
-package refer
+package linkfeat
 
 import (
 	"fmt"
@@ -13,9 +13,17 @@ type Link struct {
 	Url  string
 }
 
-func GetLinks(disk *drive.Service, chat *core.Chat) ([]*Link, error) {
+type Service struct {
+	diskSrv *drive.Service
+}
+
+func NewService(diskSrv *drive.Service) *Service {
+	return &Service{diskSrv: diskSrv}
+}
+
+func (base *Service) GetLinks(chat *core.Chat) ([]*Link, error) {
 	linkFolderQuery := "'%s' in writers and name = 'links' and mimeType = 'application/vnd.google-apps.folder'"
-	linkFolders, err := disk.Files.
+	linkFolders, err := base.diskSrv.Files.
 		List().
 		Q(fmt.Sprintf(linkFolderQuery, chat.TeacherEmail)).
 		PageSize(1).
@@ -28,7 +36,7 @@ func GetLinks(disk *drive.Service, chat *core.Chat) ([]*Link, error) {
 	}
 
 	linkFileQuery := "'%s' in parents"
-	linkFiles, err := disk.Files.List().PageSize(10).
+	linkFiles, err := base.diskSrv.Files.List().PageSize(10).
 		Q(fmt.Sprintf(linkFileQuery, linkFolders.Files[0].Id)). // smolchanovsky@gmail.com
 		Fields("nextPageToken, files(id, name)").
 		Do()
@@ -39,7 +47,7 @@ func GetLinks(disk *drive.Service, chat *core.Chat) ([]*Link, error) {
 		return []*Link{}, nil
 	}
 
-	linkFile, err := disk.Files.Get(linkFiles.Files[0].Id).Download()
+	linkFile, err := base.diskSrv.Files.Get(linkFiles.Files[0].Id).Download()
 	if err != nil {
 		return nil, err
 	}

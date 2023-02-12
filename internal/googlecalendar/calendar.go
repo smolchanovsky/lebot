@@ -1,4 +1,4 @@
-package gcalendar
+package googlecalendar
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"lebot/internal/secret"
 )
 
-func GetService() (*calendar.Service, error) {
+func NewService() (*calendar.Service, error) {
 	ctx := context.Background()
 
 	token, err := secret.GetSecret(secret.DriveTokenPath)

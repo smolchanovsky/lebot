@@ -1,4 +1,4 @@
-package content
+package materialfeat
 
 import (
 	"fmt"
@@ -14,13 +14,21 @@ type FileEvent struct {
 	FileId string
 }
 
-func GetFileMeta(disk *drive.Service, id string) (*drive.File, error) {
-	fileMeta, err := disk.Files.Get(id).Fields("id", "name", "size", "webContentLink").Do()
+type Service struct {
+	diskSrv *drive.Service
+}
+
+func NewService(diskSrv *drive.Service) *Service {
+	return &Service{diskSrv: diskSrv}
+}
+
+func (base *Service) GetFileMeta(id string) (*drive.File, error) {
+	fileMeta, err := base.diskSrv.Files.Get(id).Fields("id", "name", "size", "webContentLink").Do()
 	return fileMeta, err
 }
 
-func GetFileContent(disk *drive.Service, id string) ([]byte, error) {
-	response, err := disk.Files.Get(id).Download()
+func (base *Service) GetFileContent(id string) ([]byte, error) {
+	response, err := base.diskSrv.Files.Get(id).Download()
 	if err != nil {
 		return nil, err
 	}
@@ -30,9 +38,9 @@ func GetFileContent(disk *drive.Service, id string) ([]byte, error) {
 	return content, err
 }
 
-func GetFiles(disk *drive.Service, chat *core.Chat) ([]*drive.File, error) {
+func (base *Service) GetFiles(chat *core.Chat) ([]*drive.File, error) {
 	filesFolderQuery := "'%s' in writers and name = 'files' and mimeType = 'application/vnd.google-apps.folder'"
-	filesFolder, err := disk.Files.
+	filesFolder, err := base.diskSrv.Files.
 		List().
 		PageSize(10).
 		Q(fmt.Sprintf(filesFolderQuery, chat.TeacherEmail)).
@@ -46,7 +54,7 @@ func GetFiles(disk *drive.Service, chat *core.Chat) ([]*drive.File, error) {
 	}
 
 	filesQuery := "'%s' in parents"
-	fileList, err := disk.Files.
+	fileList, err := base.diskSrv.Files.
 		List().
 		PageSize(10).
 		Q(fmt.Sprintf(filesQuery, filesFolder.Files[0].Id)). // smolchanovsky@gmail.com
