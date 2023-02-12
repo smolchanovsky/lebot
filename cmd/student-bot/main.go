@@ -10,6 +10,7 @@ import (
 	"lebot/cmd/student-bot/features/linkfeat"
 	"lebot/cmd/student-bot/features/materialfeat"
 	"lebot/cmd/student-bot/features/reminderfeat"
+	"lebot/cmd/student-bot/features/schedulefeat"
 	"lebot/cmd/student-bot/helpers"
 	"lebot/internal/dynamodb"
 	"lebot/internal/googlecalendar"
@@ -41,6 +42,9 @@ func main() {
 
 	joinSrv := joinfeat.NewService(db)
 	joinHandler := joinfeat.NewHandler(joinSrv, bot)
+
+	scheduleSrv := schedulefeat.NewService(calSrv, db)
+	scheduleHandler := schedulefeat.NewHandler(scheduleSrv, bot)
 
 	linkSrv := linkfeat.NewService(diskSrv)
 	linkHandler := linkfeat.NewHandler(linkSrv, bot)
@@ -79,7 +83,7 @@ func main() {
 			log.Printf("start processing '%d' chat with new message: %s", chatId, text)
 
 			if len(text) > 0 && text[0] == '/' {
-				HandleCommand(bot, joinHandler, linkHandler, materialHandler, update.Message, chatOrNil)
+				HandleCommand(bot, joinHandler, scheduleHandler, linkHandler, materialHandler, update.Message, chatOrNil)
 			} else {
 				HandleMessage(bot, joinHandler, reminderHandler, chatOrNil, update.Message)
 			}
@@ -108,12 +112,15 @@ func main() {
 
 func HandleCommand(
 	bot *tgbotapi.BotAPI,
-	join *joinfeat.Handler, link *linkfeat.Handler, material *materialfeat.Handler,
+	join *joinfeat.Handler, scheduleHandler *schedulefeat.Handler, link *linkfeat.Handler, material *materialfeat.Handler,
 	message *tgbotapi.Message, chat *core.Chat) {
 	log.Printf("Try match message with one of commands")
 	switch message.Text {
 	case "/start":
 		join.HandleStart(message.Chat)
+		break
+	case "/schedule":
+		scheduleHandler.Handle(chat)
 		break
 	case "/materials":
 		material.Handle(chat)

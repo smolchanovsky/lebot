@@ -23,8 +23,7 @@ func (base *Handler) HandleStart(tgChat *tgbotapi.Chat) {
 		return
 	}
 
-	msg := tgbotapi.NewMessage(chat.Id, helpers.GetReply(helpers.JoinStartRpl))
-	tg.SendMsg(base.bot, msg)
+	tg.SendText(base.bot, chat.Id, helpers.GetReply(helpers.JoinStartRpl))
 }
 
 func (base *Handler) HandleEmail(chat *core.Chat, email string) {

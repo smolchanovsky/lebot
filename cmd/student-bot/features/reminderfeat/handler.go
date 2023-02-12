@@ -31,5 +31,8 @@ func (base *Handler) HandleLessonsSoon() {
 }
 
 func (base *Handler) HandleNewChat(chat *core.Chat) {
-	base.srv.InitNewChat(chat)
+	err := base.srv.InitNewChat(chat)
+	if err != nil {
+		helpers.HandleUnknownErr(base.bot, chat.Id, err)
+	}
 }

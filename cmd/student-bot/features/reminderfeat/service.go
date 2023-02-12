@@ -67,7 +67,7 @@ func (base *Service) GetLessonsSoon() ([]*Reminder, error) {
 
 	table := base.db.Table("chatCals")
 
-	reminders := []*Reminder{}
+	var reminders []*Reminder
 	for _, cal := range calList.Items {
 		var chatCal *ChatCal
 		err := table.Get("CalId", cal.Id).One(&chatCal)

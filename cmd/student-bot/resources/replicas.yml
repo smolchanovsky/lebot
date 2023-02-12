@@ -13,6 +13,11 @@
     - Useful content
     - Socials
 
+# Schedule
+
+- id: schedule.noLessons
+  text: "No lessons"
+
 # Content
 
 - id: content.listSummary

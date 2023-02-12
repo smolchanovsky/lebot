@@ -11,6 +11,8 @@ const (
 	JoinEmailNotFoundRpl = "join.emailNotFound"
 	JoinFinishRpl        = "join.finish"
 
+	ScheduleNoLessonsRpl = "schedule.noLessons"
+
 	ContentListSummaryRpl = "content.listSummary"
 	ContentEmptyListRpl   = "content.emptyList"
 

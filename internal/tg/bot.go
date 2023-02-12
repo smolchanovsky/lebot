@@ -34,5 +34,6 @@ func SendDoc(bot *tgbotapi.BotAPI, doc tgbotapi.DocumentConfig) {
 
 func SendText(bot *tgbotapi.BotAPI, chatId int64, text string) {
 	msg := tgbotapi.NewMessage(chatId, text)
+	msg.ParseMode = tgbotapi.ModeMarkdown
 	SendMsg(bot, msg)
 }
