@@ -7,7 +7,7 @@ import (
 )
 
 func HandleUnknownErr(bot *tgbotapi.BotAPI, chatId int64, err error) {
-	log.Print("unknown error", err)
+	log.Print("unknown error: ", err)
 	text := GetReply(ErrorUnknownRpl)
 	tg.SendText(bot, chatId, text)
 }

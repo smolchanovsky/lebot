@@ -7,6 +7,7 @@ import (
 	"lebot/cmd/student-bot/helpers"
 	"lebot/internal/tg"
 	"log"
+	"time"
 )
 
 type Handler struct {
@@ -19,10 +20,10 @@ func NewHandler(srv *Service, bot *tgbotapi.BotAPI) *Handler {
 }
 
 func (base *Handler) Handle(chat *core.Chat) {
-	const count = 10
+	const count = 5
 	lessons, err := base.srv.GetLessons(chat, count)
 	if err != nil {
-		log.Print("error when obtaining lessons", err)
+		log.Print("error when obtaining lessons: ", err)
 		return
 	}
 
@@ -36,8 +37,8 @@ func (base *Handler) Handle(chat *core.Chat) {
 			line := fmt.Sprintf(
 				"*%s:* %s - %s",
 				lesson.start.Format("Jan-02 Mon"),
-				lesson.start.Format("10:50"),
-				lesson.end.Format("10:50"))
+				lesson.start.Format(time.Kitchen),
+				lesson.end.Format(time.Kitchen))
 			text += line + "\n"
 		}
 

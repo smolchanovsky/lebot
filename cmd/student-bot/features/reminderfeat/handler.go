@@ -20,7 +20,7 @@ func NewHandler(srv *Service, bot *tgbotapi.BotAPI) *Handler {
 func (base *Handler) HandleLessonsSoon() {
 	reminders, err := base.srv.GetLessonsSoon()
 	if err != nil {
-		log.Print("error when obtaining reminders", err)
+		log.Print("error when obtaining reminders: ", err)
 		return
 	}
 

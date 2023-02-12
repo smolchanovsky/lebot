@@ -47,7 +47,7 @@ func (base *Service) GetLessons(chat *core.Chat, count int64) ([]*Lesson, error)
 	for _, event := range events.Items {
 		start, err := time.Parse(time.RFC3339, event.Start.DateTime)
 		if err != nil {
-			log.Print("could not parse start date of event", err)
+			log.Print("could not parse start date of event: ", err)
 			continue
 		}
 		end, err := time.Parse(time.RFC3339, event.End.DateTime)

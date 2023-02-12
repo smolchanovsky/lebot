@@ -1,6 +1,7 @@
 package reminderfeat
 
 import (
+	"errors"
 	"github.com/guregu/dynamo"
 	"google.golang.org/api/calendar/v3"
 	"lebot/cmd/student-bot/core"
@@ -27,6 +28,9 @@ func NewService(calSrv *calendar.Service, db *dynamo.DB) *Service {
 }
 
 const defaultTimeZone = "Europe/Moscow"
+
+var ErrCalConflict = errors.New("more than one calendar found")
+var ErrCalNotFound = errors.New("more than one calendar found")
 
 func (base *Service) InitNewChat(chat *core.Chat) error {
 	cal, err := base.calSrv.Calendars.Insert(&calendar.Calendar{
@@ -69,22 +73,28 @@ func (base *Service) GetLessonsSoon() ([]*Reminder, error) {
 
 	var reminders []*Reminder
 	for _, cal := range calList.Items {
-		var chatCal *ChatCal
-		err := table.Get("CalId", cal.Id).One(&chatCal)
+		var chatCals []*ChatCal
+		err := table.Scan().Filter("CalId = ?", cal.Id).All(&chatCals)
 		if err != nil {
-			log.Print("calendar not found in db", err)
+			log.Print("calendar not found in db: ", err)
 			continue
+		}
+		if len(chatCals) == 0 {
+			return nil, ErrCalNotFound
+		}
+		if len(chatCals) > 1 {
+			return nil, ErrCalConflict
 		}
 
 		events, err := base.calSrv.Events.List(cal.Id).TimeZone(defaultTimeZone).
 			TimeMin(minTime).TimeMax(maxTime).SingleEvents(true).Do()
 		if err != nil {
-			log.Print("error while obtain events", err)
+			log.Print("error while obtain events: ", err)
 			continue
 		}
 
 		for range events.Items {
-			reminders = append(reminders, &Reminder{ChatId: chatCal.ChatId})
+			reminders = append(reminders, &Reminder{ChatId: chatCals[0].ChatId})
 		}
 	}
 
