@@ -31,7 +31,7 @@ func (base *Handler) Handle(chat *core.Chat) {
 	if len(lessons) == 0 {
 		text = helpers.GetReply(helpers.ScheduleNoLessonsRpl)
 	} else {
-		text = fmt.Sprintf("Next %d lessons:", count)
+		text = fmt.Sprintf("Next %d lessons:\n", count)
 		for _, lesson := range lessons {
 			line := fmt.Sprintf(
 				"*%s:* %s - %s",
@@ -39,6 +39,10 @@ func (base *Handler) Handle(chat *core.Chat) {
 				lesson.start.Format("10:50"),
 				lesson.end.Format("10:50"))
 			text += line + "\n"
+		}
+
+		if len(lessons) < count {
+			text += fmt.Sprintf("\nThere are only %d lessons in the schedule", len(lessons))
 		}
 	}
 	tg.SendText(base.bot, chat.Id, text)
