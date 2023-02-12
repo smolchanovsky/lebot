@@ -39,7 +39,7 @@ func (base *Service) GetFileContent(id string) ([]byte, error) {
 }
 
 func (base *Service) GetFiles(chat *core.Chat) ([]*drive.File, error) {
-	filesFolderQuery := "'%s' in writers and name = 'files' and mimeType = 'application/vnd.google-apps.folder'"
+	filesFolderQuery := "'%s' in writers and name = 'materials' and mimeType = 'application/vnd.google-apps.folder'"
 	filesFolder, err := base.diskSrv.Files.
 		List().
 		PageSize(10).

@@ -114,7 +114,7 @@ func HandleCommand(
 	bot *tgbotapi.BotAPI,
 	join *joinfeat.Handler, scheduleHandler *schedulefeat.Handler, link *linkfeat.Handler, material *materialfeat.Handler,
 	message *tgbotapi.Message, chat *core.Chat) {
-	log.Printf("Try match message with one of commands")
+	log.Printf("try match message with one of commands")
 	switch message.Text {
 	case "/start":
 		join.HandleStart(message.Chat)
@@ -139,7 +139,7 @@ func HandleMessage(
 	bot *tgbotapi.BotAPI,
 	join *joinfeat.Handler, reminder *reminderfeat.Handler,
 	chat *core.Chat, message *tgbotapi.Message) {
-	log.Printf("Try match message with one of state")
+	log.Printf("try match message with one of state")
 	switch chat.State {
 	case core.Start:
 		join.HandleEmail(chat, message.Text)
@@ -156,7 +156,7 @@ func HandleCallback(
 	bot *tgbotapi.BotAPI,
 	material *materialfeat.Handler,
 	chat *core.Chat, event *core.Event, data string) {
-	log.Printf("Try match callback with one of event")
+	log.Printf("try match callback with one of event")
 	switch event.Type {
 	case materialfeat.GetFileEvent:
 		material.HandleGetFileEvent(chat, data)
