@@ -27,6 +27,11 @@
 - id: files.emptyList
   text: "Links not found ☹️"
 
+# reminder
+
+- id: reminders.lessonSoon
+  text: "What's up! Your class is in one hour. Get ready! 🤓"
+
 # errors
 
 - id: errors.unknown

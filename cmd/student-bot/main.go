@@ -2,13 +2,17 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/robfig/cron/v3"
 	"lebot/cmd/student-bot/core"
 	"lebot/cmd/student-bot/features/content"
 	"lebot/cmd/student-bot/features/join"
 	"lebot/cmd/student-bot/features/refer"
+	"lebot/cmd/student-bot/features/reminder"
 	"lebot/internal/drive"
 	"lebot/internal/dynamo"
+	"lebot/internal/gcalendar"
 	"lebot/internal/message"
 	"lebot/internal/tg"
 	"log"
@@ -25,10 +29,30 @@ func main() {
 		log.Fatal(err)
 	}
 
+	calSrv, err := gcalendar.GetService()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	bot, err := tg.NewBotApi()
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	c := cron.New()
+	c.AddFunc("0 * * * *", func() {
+		reminders, err := reminder.GetStartingLessons(calSrv, db)
+		if err != nil {
+			log.Print(err)
+			return
+		}
+
+		for _, reminder := range reminders {
+			text := GetMessage(fmt.Sprintf("reminders.%s", reminder.Type))
+			tg.SendText(bot, reminder.ChatId, text)
+		}
+	})
+	c.Start()
 
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = 60
@@ -41,6 +65,7 @@ func main() {
 
 		if update.Message != nil {
 			chatId := update.Message.Chat.ID
+			userName := update.Message.Chat.UserName
 			text := update.Message.Text
 			log.Printf("new message in '%d' chat: %s", chatId, text)
 
@@ -52,7 +77,7 @@ func main() {
 
 			switch text {
 			case "/start":
-				chat, err = join.CreateChat(db, chatId)
+				chat, err = join.CreateChat(db, chatId, userName)
 				if err != nil {
 					tg.SendFatalErr(bot, chatId, GetMessage("errors.unknown"), err)
 					continue
@@ -121,6 +146,7 @@ func main() {
 				} else if err != nil {
 					msg = tgbotapi.NewMessage(chat.Id, GetMessage("errors.unknown"))
 				} else {
+					reminder.Init(calSrv, db, chat)
 					msg = tgbotapi.NewMessage(chat.Id, GetMessage("join.finish"))
 				}
 

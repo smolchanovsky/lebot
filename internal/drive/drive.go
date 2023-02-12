@@ -21,7 +21,7 @@ func NewService() (*drive.Service, error) {
 		return nil, err
 	}
 
-	client := config.Client(context.Background())
+	client := config.Client(ctx)
 	srv, err := drive.NewService(ctx, option.WithHTTPClient(client))
 
 	return srv, err

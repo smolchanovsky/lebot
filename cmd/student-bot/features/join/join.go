@@ -8,10 +8,15 @@ import (
 	"strings"
 )
 
-func CreateChat(db *dynamo.DB, chatId int64) (*core.Chat, error) {
+func CreateChat(db *dynamo.DB, chatId int64, userName string) (*core.Chat, error) {
 	table := db.Table("chats")
 
-	chat := core.Chat{Id: chatId, TeacherEmail: "", State: core.Start}
+	chat := core.Chat{
+		Id:           chatId,
+		TeacherEmail: "",
+		UserName:     userName,
+		State:        core.Start,
+	}
 
 	err := table.Put(chat).Run()
 	if err != nil {

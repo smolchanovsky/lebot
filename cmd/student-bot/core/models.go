@@ -3,6 +3,7 @@ package core
 type Chat struct {
 	Id           int64
 	TeacherEmail string
+	UserName     string
 	State        string
 }
 

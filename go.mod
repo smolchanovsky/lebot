@@ -20,6 +20,7 @@ require (
 	github.com/googleapis/gax-go/v2 v2.7.0 // indirect
 	github.com/guregu/dynamo v1.18.1 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
+	github.com/robfig/cron/v3 v3.0.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	golang.org/x/net v0.5.0 // indirect
 	golang.org/x/sys v0.4.0 // indirect
