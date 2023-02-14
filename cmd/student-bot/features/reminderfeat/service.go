@@ -10,7 +10,9 @@ import (
 )
 
 type Reminder struct {
-	ChatId int64
+	EventId   string
+	ChatId    int64
+	CreatedAt time.Time
 }
 
 type ChatCal struct {
@@ -69,12 +71,13 @@ func (base *Service) GetLessonsSoon() ([]*Reminder, error) {
 		return nil, err
 	}
 
-	table := base.db.Table("chatCals")
+	chatCalTable := base.db.Table("chatCals")
+	reminderTable := base.db.Table("reminders")
 
 	var reminders []*Reminder
 	for _, cal := range calList.Items {
 		var chatCals []*ChatCal
-		err := table.Scan().Filter("CalId = ?", cal.Id).All(&chatCals)
+		err := chatCalTable.Scan().Filter("CalId = ?", cal.Id).All(&chatCals)
 		if err != nil {
 			log.Print("calendar not found in db: ", err)
 			continue
@@ -93,8 +96,30 @@ func (base *Service) GetLessonsSoon() ([]*Reminder, error) {
 			continue
 		}
 
-		for range events.Items {
-			reminders = append(reminders, &Reminder{ChatId: chatCals[0].ChatId})
+		for _, event := range events.Items {
+			var dbReminders []*Reminder
+			err = reminderTable.Get("EventId", event.Id).All(&dbReminders)
+			if err != nil {
+				log.Print("error while obtain reminder from db: ", err)
+				continue
+			}
+
+			if len(dbReminders) > 0 {
+				log.Print("skip already sent reminder")
+				continue
+			}
+
+			newReminder := Reminder{
+				EventId:   event.Id,
+				ChatId:    chatCals[0].ChatId,
+				CreatedAt: time.Now(),
+			}
+			err := reminderTable.Put(&newReminder).Run()
+			if err != nil {
+				log.Print("error while save reminder to db: ", err)
+				continue
+			}
+			reminders = append(reminders, &newReminder)
 		}
 	}
 

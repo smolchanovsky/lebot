@@ -56,7 +56,7 @@ func main() {
 	reminderHandler := reminderfeat.NewHandler(reminderSrv, bot)
 
 	scheduler := cron.New()
-	scheduler.AddFunc("0 * * * *", func() {
+	scheduler.AddFunc("*/15 * * * *", func() {
 		reminderHandler.HandleLessonsSoon()
 	})
 	scheduler.Start()
