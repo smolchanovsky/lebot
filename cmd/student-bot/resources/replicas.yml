@@ -35,7 +35,10 @@
 # Reminder
 
 - id: reminder.lessonSoon
-  text: "What's up! Your class is in one hour. Get ready! 🤓"
+  text: "What's up! Your class is in about an hour"
+
+- id: reminder.lessonStart
+  text: "Get ready! 🤓 Your class is in about 15 minutes"
 
 # Error
 

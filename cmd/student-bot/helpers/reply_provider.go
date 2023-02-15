@@ -19,7 +19,8 @@ const (
 	LinkListSummaryRpl = "link.listSummary"
 	LinkEmptyListRpl   = "link.emptyList"
 
-	ReminderLessonSoonRpl = "reminder.lessonSoon"
+	ReminderLessonSoonRpl  = "reminder.lessonSoon"
+	ReminderLessonStartRpl = "reminder.lessonStart"
 
 	ErrorInvalidCommandRpl = "error.invalidCommand"
 	ErrorUnknownRpl        = "error.unknown"

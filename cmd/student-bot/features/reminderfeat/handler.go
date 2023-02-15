@@ -30,6 +30,19 @@ func (base *Handler) HandleLessonsSoon() {
 	}
 }
 
+func (base *Handler) HandleLessonsStart() {
+	reminders, err := base.srv.GetLessonsStart()
+	if err != nil {
+		log.Print("error when obtaining reminders: ", err)
+		return
+	}
+
+	for _, reminder := range reminders {
+		text := helpers.GetReply(helpers.ReminderLessonStartRpl)
+		tg.SendText(base.bot, reminder.ChatId, text)
+	}
+}
+
 func (base *Handler) HandleNewChat(chat *core.Chat) {
 	err := base.srv.InitNewChat(chat)
 	if err != nil {
