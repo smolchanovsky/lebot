@@ -37,7 +37,7 @@ func (base *Service) GetLinks(chat *core.Chat) ([]*Link, error) {
 
 	linkFileQuery := "'%s' in parents"
 	linkFiles, err := base.diskSrv.Files.List().PageSize(10).
-		Q(fmt.Sprintf(linkFileQuery, linkFolders.Files[0].Id)). // smolchanovsky@gmail.com
+		Q(fmt.Sprintf(linkFileQuery, linkFolders.Files[0].Id)).
 		Fields("nextPageToken, files(id, name)").
 		Do()
 	if err != nil {

@@ -11,8 +11,8 @@ import (
 const GetMaterialEvent = 1
 
 type MaterialEvent struct {
-	Type       int
-	MaterialId string
+	Type       int    `json:"t"`
+	MaterialId string `json:"m"`
 }
 
 type Handler struct {

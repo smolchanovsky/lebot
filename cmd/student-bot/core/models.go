@@ -17,5 +17,5 @@ type Replica struct {
 }
 
 type Event struct {
-	Type int
+	Type int `json:"t"`
 }

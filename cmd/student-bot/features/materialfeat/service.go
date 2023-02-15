@@ -50,7 +50,7 @@ func (base *Service) GetMaterials(chat *core.Chat) ([]*drive.File, error) {
 	materialList, err := base.diskSrv.Files.
 		List().
 		PageSize(10).
-		Q(fmt.Sprintf(materialsQuery, materialsFolder.Files[0].Id)). // smolchanovsky@gmail.com
+		Q(fmt.Sprintf(materialsQuery, materialsFolder.Files[0].Id)).
 		Do()
 	if err != nil {
 		return nil, err
