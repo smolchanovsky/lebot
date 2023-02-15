@@ -9,6 +9,7 @@ import (
 	"lebot/cmd/student-bot/features/joinfeat"
 	"lebot/cmd/student-bot/features/linkfeat"
 	"lebot/cmd/student-bot/features/materialfeat"
+	"lebot/cmd/student-bot/features/notefeat"
 	"lebot/cmd/student-bot/features/reminderfeat"
 	"lebot/cmd/student-bot/features/schedulefeat"
 	"lebot/cmd/student-bot/helpers"
@@ -52,6 +53,9 @@ func main() {
 	materialSrv := materialfeat.NewService(diskSrv)
 	materialHandler := materialfeat.NewHandler(materialSrv, bot)
 
+	noteSrv := notefeat.NewService(diskSrv)
+	noteHandler := notefeat.NewHandler(noteSrv, bot)
+
 	reminderSrv := reminderfeat.NewService(calSrv, db)
 	reminderHandler := reminderfeat.NewHandler(reminderSrv, bot)
 
@@ -86,9 +90,9 @@ func main() {
 			log.Printf("start processing '%d' chat with new message: %s", chatId, text)
 
 			if len(text) > 0 && text[0] == '/' {
-				HandleCommand(bot, joinHandler, scheduleHandler, linkHandler, materialHandler, update.Message, chatOrNil)
+				HandleCommand(bot, joinHandler, scheduleHandler, materialHandler, noteHandler, linkHandler, update.Message, chatOrNil)
 			} else {
-				HandleMessage(bot, joinHandler, reminderHandler, chatOrNil, update.Message)
+				HandleMessage(bot, joinHandler, noteHandler, reminderHandler, chatOrNil, update.Message)
 			}
 		} else if update.CallbackQuery != nil {
 			chatId := update.CallbackQuery.Message.Chat.ID
@@ -108,14 +112,15 @@ func main() {
 				helpers.HandleUnknownErr(bot, chatId, err)
 			}
 
-			HandleCallback(bot, materialHandler, chatOrNil, event, data)
+			HandleCallback(bot, materialHandler, noteHandler, chatOrNil, event, data)
 		}
 	}
 }
 
 func HandleCommand(
 	bot *tgbotapi.BotAPI,
-	join *joinfeat.Handler, scheduleHandler *schedulefeat.Handler, link *linkfeat.Handler, material *materialfeat.Handler,
+	join *joinfeat.Handler, scheduleHandler *schedulefeat.Handler,
+	material *materialfeat.Handler, noteHandler *notefeat.Handler, link *linkfeat.Handler,
 	message *tgbotapi.Message, chat *core.Chat) {
 	log.Printf("try match message with one of commands")
 	switch message.Text {
@@ -127,6 +132,9 @@ func HandleCommand(
 		break
 	case "/materials":
 		material.Handle(chat)
+		break
+	case "/notes":
+		noteHandler.Handle(chat)
 		break
 	case "/links":
 		link.Handle(chat)
@@ -140,12 +148,13 @@ func HandleCommand(
 
 func HandleMessage(
 	bot *tgbotapi.BotAPI,
-	join *joinfeat.Handler, reminder *reminderfeat.Handler,
+	join *joinfeat.Handler, noteHandler *notefeat.Handler, reminder *reminderfeat.Handler,
 	chat *core.Chat, message *tgbotapi.Message) {
 	log.Printf("try match message with one of state")
 	switch chat.State {
 	case core.Start:
 		join.HandleEmail(chat, message.Text)
+		noteHandler.HandleNewChat(chat)
 		reminder.HandleNewChat(chat)
 		break
 	default:
@@ -157,12 +166,15 @@ func HandleMessage(
 
 func HandleCallback(
 	bot *tgbotapi.BotAPI,
-	material *materialfeat.Handler,
+	material *materialfeat.Handler, noteHandler *notefeat.Handler,
 	chat *core.Chat, event *core.Event, data string) {
 	log.Printf("try match callback with one of event")
 	switch event.Type {
-	case materialfeat.GetFileEvent:
-		material.HandleGetFileEvent(chat, data)
+	case materialfeat.GetMaterialEvent:
+		material.HandleGetMaterialEvent(chat, data)
+		break
+	case notefeat.GetNoteEvent:
+		noteHandler.HandleGetNoteEvent(chat, data)
 		break
 	default:
 		helpers.HandleUnknownErr(bot, chat.Id, errors.New("callback event not matched"))
