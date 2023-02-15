@@ -16,6 +16,7 @@ type Reminder struct {
 	ChatId    int64
 	CreatedAt time.Time
 	Type      string
+	Url       string
 }
 
 const (
@@ -165,6 +166,7 @@ func (base *Service) getLessons(reminderType string, condition func(event *calen
 				ChatId:    chatCals[0].ChatId,
 				CreatedAt: time.Now(),
 				Type:      reminderType,
+				Url:       event.ConferenceData.EntryPoints[0].Uri,
 			}
 			err = reminderTable.Put(&newReminder).Run()
 			if err != nil {

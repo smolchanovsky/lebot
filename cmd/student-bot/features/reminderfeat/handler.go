@@ -1,6 +1,7 @@
 package reminderfeat
 
 import (
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"lebot/cmd/student-bot/core"
 	"lebot/cmd/student-bot/helpers"
@@ -38,8 +39,8 @@ func (base *Handler) HandleLessonsStart() {
 	}
 
 	for _, reminder := range reminders {
-		text := helpers.GetReply(helpers.ReminderLessonStartRpl)
-		tg.SendText(base.bot, reminder.ChatId, text)
+		reply := fmt.Sprintf("%s\n%s", helpers.GetReply(helpers.ReminderLessonStartRpl), reminder.Url)
+		tg.SendText(base.bot, reminder.ChatId, reply)
 	}
 }
 
