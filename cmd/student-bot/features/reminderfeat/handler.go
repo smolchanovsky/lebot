@@ -39,7 +39,10 @@ func (base *Handler) HandleLessonsStart() {
 	}
 
 	for _, reminder := range reminders {
-		reply := fmt.Sprintf("%s\n%s", helpers.GetReply(helpers.ReminderLessonStartRpl), reminder.Url)
+		reply := fmt.Sprintf("%s", helpers.GetReply(helpers.ReminderLessonStartRpl))
+		if reminder.Url == nil {
+			reply = reply + fmt.Sprintf("\n%s", *reminder.Url)
+		}
 		tg.SendText(base.bot, reminder.ChatId, reply)
 	}
 }

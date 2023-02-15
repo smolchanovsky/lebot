@@ -16,7 +16,7 @@ type Reminder struct {
 	ChatId    int64
 	CreatedAt time.Time
 	Type      string
-	Url       string
+	Url       *string
 }
 
 const (
@@ -149,6 +149,7 @@ func (base *Service) getLessons(reminderType string, condition func(event *calen
 				log.Print("skip already sent reminder")
 				continue
 			}
+			chatId := chatCals[0].ChatId
 
 			shouldSend, err := condition(event, now)
 			if err != nil {
@@ -160,13 +161,18 @@ func (base *Service) getLessons(reminderType string, condition func(event *calen
 				continue
 			}
 
+			var url *string = nil
+			if len(event.ConferenceData.EntryPoints) > 0 {
+				url = &event.ConferenceData.EntryPoints[0].Uri
+			}
+
 			newReminder := Reminder{
 				Id:        fmt.Sprintf("%s_%s", event.Id, reminderType),
 				EventId:   event.Id,
-				ChatId:    chatCals[0].ChatId,
+				ChatId:    chatId,
 				CreatedAt: time.Now(),
 				Type:      reminderType,
-				Url:       event.ConferenceData.EntryPoints[0].Uri,
+				Url:       url,
 			}
 			err = reminderTable.Put(&newReminder).Run()
 			if err != nil {
