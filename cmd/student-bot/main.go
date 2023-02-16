@@ -170,10 +170,10 @@ func HandleCallback(
 	chat *core.Chat, event *core.Event, data string) {
 	log.Printf("try match callback with one of event")
 	switch event.Type {
-	case core.GetMaterialEvent:
+	case core.MaterialEvent:
 		material.HandleGetMaterialEvent(chat, data)
 		break
-	case core.GetLessonEvent:
+	case core.LessonEvent:
 		lessonHandler.HandleGetLessonEvent(chat, data)
 		break
 	default:

@@ -38,7 +38,11 @@ func (base *Handler) Handle(chat *core.Chat) {
 		tg.SendMsg(base.bot, msg)
 	} else {
 		for i, lesson := range lessons {
-			eventJson, err := json.Marshal(core.ButtonEvent{Type: core.GetLessonEvent, Value: lesson.Id})
+			eventJson, err := json.Marshal(core.ButtonEvent{
+				Type:   core.LessonEvent,
+				Action: core.GetFileAction,
+				Value:  lesson.Id,
+			})
 			if err != nil {
 				helpers.HandleUnknownErr(base.bot, chat.Id, err)
 			}
