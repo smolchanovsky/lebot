@@ -18,7 +18,7 @@ func NewService(diskSrv *drive.Service) *Service {
 
 var ErrMaterialsFolderNotFound = errors.New("materials folder not found")
 
-func (base *Service) GetMaterialsFolder(chat *core.Chat) (*drive.File, error) {
+func (base *Service) GetMaterialsRoot(chat *core.Chat) (*drive.File, error) {
 	materialsFolderQuery := "'%s' in writers and name = 'materials' and mimeType = 'application/vnd.google-apps.folder'"
 	materialsFolder, err := base.diskSrv.Files.
 		List().
@@ -38,7 +38,7 @@ func (base *Service) GetMaterialsFolder(chat *core.Chat) (*drive.File, error) {
 
 func (base *Service) GetMaterials(folderId string) ([]*drive.File, error) {
 	materialsQuery := "'%s' in parents"
-	materialList, err := base.diskSrv.Files.
+	materialsFolder, err := base.diskSrv.Files.
 		List().
 		PageSize(10).
 		Q(fmt.Sprintf(materialsQuery, folderId)).
@@ -47,11 +47,12 @@ func (base *Service) GetMaterials(folderId string) ([]*drive.File, error) {
 		return nil, err
 	}
 
-	return materialList.Files, err
+	return materialsFolder.Files, err
 }
 
 func (base *Service) GetMaterialMeta(id string) (*drive.File, error) {
-	materialMeta, err := base.diskSrv.Files.Get(id).Fields("id", "name", "size", "webContentLink").Do()
+	materialMeta, err := base.diskSrv.Files.Get(id).
+		Fields("id", "name", "size", "webContentLink").Do()
 	return materialMeta, err
 }
 

@@ -16,7 +16,7 @@ func NewHandler(srv *Service, bot *tgbotapi.BotAPI) *Handler {
 	return &Handler{srv: srv, bot: bot}
 }
 
-func (base *Handler) Handle(chat *core.Chat) {
+func (base *Handler) HandleCommand(chat *core.Chat) {
 	links, err := base.srv.GetLinks(chat)
 	if err != nil {
 		helpers.HandleUnknownErr(base.bot, chat.Id, err)

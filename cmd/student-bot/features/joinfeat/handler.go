@@ -16,7 +16,7 @@ func NewHandler(srv *Service, bot *tgbotapi.BotAPI) *Handler {
 	return &Handler{srv: srv, bot: bot}
 }
 
-func (base *Handler) HandleStart(tgChat *tgbotapi.Chat) {
+func (base *Handler) HandleCommand(tgChat *tgbotapi.Chat) {
 	chat, err := base.srv.SaveChat(tgChat.ID, tgChat.UserName)
 	if err != nil {
 		helpers.HandleUnknownErr(base.bot, tgChat.ID, err)

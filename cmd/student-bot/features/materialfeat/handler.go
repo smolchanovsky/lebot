@@ -18,8 +18,8 @@ func NewHandler(srv *Service, bot *tgbotapi.BotAPI) *Handler {
 	return &Handler{srv: srv, bot: bot}
 }
 
-func (base *Handler) Handle(chat *core.Chat) {
-	materialsFolder, err := base.srv.GetMaterialsFolder(chat)
+func (base *Handler) HandleCommand(chat *core.Chat) {
+	materialsFolder, err := base.srv.GetMaterialsRoot(chat)
 	if err != nil {
 		helpers.HandleUnknownErr(base.bot, chat.Id, err)
 		return
@@ -101,7 +101,10 @@ func (base *Handler) renderFile(chat *core.Chat, id string) {
 			helpers.HandleUnknownErr(base.bot, chat.Id, err)
 		}
 
-		doc := tgbotapi.NewDocument(chat.Id, tgbotapi.FileBytes{Name: materialMeta.Name, Bytes: materialContent})
+		doc := tgbotapi.NewDocument(chat.Id, tgbotapi.FileBytes{
+			Name:  materialMeta.Name,
+			Bytes: materialContent,
+		})
 		tg.SendDoc(base.bot, doc)
 	} else {
 		msg := tgbotapi.NewMessage(chat.Id, materialMeta.WebContentLink)

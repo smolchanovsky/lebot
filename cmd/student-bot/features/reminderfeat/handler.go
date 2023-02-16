@@ -18,6 +18,13 @@ func NewHandler(srv *Service, bot *tgbotapi.BotAPI) *Handler {
 	return &Handler{srv: srv, bot: bot}
 }
 
+func (base *Handler) HandleNewChat(chat *core.Chat) {
+	err := base.srv.InitNewChat(chat)
+	if err != nil {
+		helpers.HandleUnknownErr(base.bot, chat.Id, err)
+	}
+}
+
 func (base *Handler) HandleLessonsSoon() {
 	reminders, err := base.srv.GetLessonsSoon()
 	if err != nil {
@@ -44,12 +51,5 @@ func (base *Handler) HandleLessonsStart() {
 			reply = reply + fmt.Sprintf("\n%s", *reminder.Url)
 		}
 		tg.SendText(base.bot, reminder.ChatId, reply)
-	}
-}
-
-func (base *Handler) HandleNewChat(chat *core.Chat) {
-	err := base.srv.InitNewChat(chat)
-	if err != nil {
-		helpers.HandleUnknownErr(base.bot, chat.Id, err)
 	}
 }

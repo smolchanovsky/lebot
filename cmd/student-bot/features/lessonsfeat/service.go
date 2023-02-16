@@ -36,7 +36,7 @@ func (base *Service) InitNewChat(chat *core.Chat) error {
 	return nil
 }
 
-func (base *Service) GetLessons(chat *core.Chat) ([]*drive.File, error) {
+func (base *Service) GetLessonsRoot(chat *core.Chat) (*drive.File, error) {
 	lessonsFolder, err := base.getLessonsFolder(chat)
 	if err != nil {
 		return nil, err
@@ -47,20 +47,44 @@ func (base *Service) GetLessons(chat *core.Chat) ([]*drive.File, error) {
 		return nil, err
 	}
 
-	lessonFilesQuery := "'%s' in parents"
-	lessonFiles, err := base.diskSrv.Files.
+	return studentFolder, nil
+}
+
+func (base *Service) GetLessonFolders(folderId string) ([]*drive.File, error) {
+	lessonsQuery := "'%s' in parents"
+	lessonsFolder, err := base.diskSrv.Files.
 		List().
 		PageSize(10).
-		Q(fmt.Sprintf(lessonFilesQuery, studentFolder.Id)).
+		Q(fmt.Sprintf(lessonsQuery, folderId)).
 		Do()
 	if err != nil {
 		return nil, err
 	}
 
-	return lessonFiles.Files, nil
+	return lessonsFolder.Files, err
 }
 
-func (base *Service) GetLessonContent(id string) ([]byte, error) {
+func (base *Service) GetLessonFiles(folderId string) ([]*drive.File, error) {
+	lessonFilesQuery := "'%s' in parents"
+	lessonFiles, err := base.diskSrv.Files.
+		List().
+		PageSize(10).
+		Q(fmt.Sprintf(lessonFilesQuery, folderId)).
+		Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return lessonFiles.Files, err
+}
+
+func (base *Service) GetLessonFileMeta(id string) (*drive.File, error) {
+	materialMeta, err := base.diskSrv.Files.Get(id).
+		Fields("id", "name", "size", "webContentLink").Do()
+	return materialMeta, err
+}
+
+func (base *Service) GetLessonFileContent(id string) ([]byte, error) {
 	response, err := base.diskSrv.Files.Export(id, "text/plain").Download()
 	if err != nil {
 		return nil, err

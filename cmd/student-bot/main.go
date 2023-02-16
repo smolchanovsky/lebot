@@ -125,19 +125,19 @@ func HandleCommand(
 	log.Printf("try match message with one of commands")
 	switch message.Text {
 	case "/start":
-		join.HandleStart(message.Chat)
+		join.HandleCommand(message.Chat)
 		break
 	case "/schedule":
 		scheduleHandler.Handle(chat)
 		break
 	case "/lessons":
-		lessonHandler.Handle(chat)
+		lessonHandler.HandleCommand(chat)
 		break
 	case "/materials":
-		material.Handle(chat)
+		material.HandleCommand(chat)
 		break
 	case "/links":
-		link.Handle(chat)
+		link.HandleCommand(chat)
 		break
 	default:
 		log.Printf("message command not matched")
@@ -174,7 +174,7 @@ func HandleCallback(
 		material.HandleButtonEvent(chat, data)
 		break
 	case core.LessonEvent:
-		lessonHandler.HandleGetLessonEvent(chat, data)
+		lessonHandler.HandleButtonEvent(chat, data)
 		break
 	default:
 		helpers.HandleUnknownErr(bot, chat.Id, errors.New("callback event not matched"))
