@@ -1,4 +1,4 @@
-package notefeat
+package lessonsfeat
 
 import (
 	"encoding/json"
@@ -7,13 +7,6 @@ import (
 	"lebot/cmd/student-bot/helpers"
 	"lebot/internal/tg"
 )
-
-const GetNoteEvent = 2
-
-type NoteEvent struct {
-	Type   int    `json:"t"`
-	NoteId string `json:"n"`
-}
 
 type Handler struct {
 	srv *Service
@@ -32,40 +25,40 @@ func (base *Handler) HandleNewChat(chat *core.Chat) {
 }
 
 func (base *Handler) Handle(chat *core.Chat) {
-	notes, err := base.srv.GetNotes(chat)
+	lessons, err := base.srv.GetLessons(chat)
 	if err != nil {
 		helpers.HandleUnknownErr(base.bot, chat.Id, err)
 		return
 	}
 
 	msg := tgbotapi.NewMessage(chat.Id, helpers.GetReply(helpers.ContentListSummaryRpl))
-	rows := make([][]tgbotapi.InlineKeyboardButton, len(notes))
-	if len(notes) == 0 {
+	rows := make([][]tgbotapi.InlineKeyboardButton, len(lessons))
+	if len(lessons) == 0 {
 		msg = tgbotapi.NewMessage(chat.Id, helpers.GetReply(helpers.ContentEmptyListRpl))
 		tg.SendMsg(base.bot, msg)
 	} else {
-		for i, note := range notes {
-			eventJson, err := json.Marshal(NoteEvent{Type: GetNoteEvent, NoteId: note.Id})
+		for i, lesson := range lessons {
+			eventJson, err := json.Marshal(core.ButtonEvent{Type: core.GetLessonEvent, Value: lesson.Id})
 			if err != nil {
 				helpers.HandleUnknownErr(base.bot, chat.Id, err)
 			}
 			rows[i] = tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData(note.Name, string(eventJson)))
+				tgbotapi.NewInlineKeyboardButtonData(lesson.Name, string(eventJson)))
 		}
 		msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(rows...)
 		tg.SendMsg(base.bot, msg)
 	}
 }
 
-func (base *Handler) HandleGetNoteEvent(chat *core.Chat, data string) {
-	var getNoteEvent NoteEvent
-	err := json.Unmarshal([]byte(data), &getNoteEvent)
+func (base *Handler) HandleGetLessonEvent(chat *core.Chat, data string) {
+	var getLessonEvent core.ButtonEvent
+	err := json.Unmarshal([]byte(data), &getLessonEvent)
 
-	noteContent, err := base.srv.GetNoteContent(getNoteEvent.NoteId)
+	lessonContent, err := base.srv.GetLessonContent(getLessonEvent.Value)
 	if err != nil {
 		helpers.HandleUnknownErr(base.bot, chat.Id, err)
 	}
 
-	doc := tgbotapi.NewDocument(chat.Id, tgbotapi.FileBytes{Name: "Lesson note.txt", Bytes: noteContent})
+	doc := tgbotapi.NewDocument(chat.Id, tgbotapi.FileBytes{Name: "Lesson.txt", Bytes: lessonContent})
 	tg.SendDoc(base.bot, doc)
 }

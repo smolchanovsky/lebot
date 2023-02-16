@@ -8,13 +8,6 @@ import (
 	"lebot/internal/tg"
 )
 
-const GetMaterialEvent = 1
-
-type MaterialEvent struct {
-	Type       int    `json:"t"`
-	MaterialId string `json:"m"`
-}
-
 type Handler struct {
 	srv *Service
 	bot *tgbotapi.BotAPI
@@ -38,7 +31,7 @@ func (base *Handler) Handle(chat *core.Chat) {
 		tg.SendMsg(base.bot, msg)
 	} else {
 		for i, material := range materials {
-			eventJson, err := json.Marshal(MaterialEvent{Type: GetMaterialEvent, MaterialId: material.Id})
+			eventJson, err := json.Marshal(core.ButtonEvent{Type: core.GetMaterialEvent, Value: material.Id})
 			if err != nil {
 				helpers.HandleUnknownErr(base.bot, chat.Id, err)
 			}
@@ -51,10 +44,10 @@ func (base *Handler) Handle(chat *core.Chat) {
 }
 
 func (base *Handler) HandleGetMaterialEvent(chat *core.Chat, data string) {
-	var getMaterialEvent MaterialEvent
+	var getMaterialEvent core.ButtonEvent
 	err := json.Unmarshal([]byte(data), &getMaterialEvent)
 
-	materialMeta, err := base.srv.GetMaterialMeta(getMaterialEvent.MaterialId)
+	materialMeta, err := base.srv.GetMaterialMeta(getMaterialEvent.Value)
 	if err != nil {
 		helpers.HandleUnknownErr(base.bot, chat.Id, err)
 	}

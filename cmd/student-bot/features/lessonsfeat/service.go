@@ -1,4 +1,4 @@
-package notefeat
+package lessonsfeat
 
 import (
 	"errors"
@@ -16,7 +16,7 @@ func NewService(diskSrv *drive.Service) *Service {
 	return &Service{diskSrv: diskSrv}
 }
 
-var ErrLessonsFolderNotFound = errors.New("email not found")
+var ErrLessonsFolderNotFound = errors.New("lesson folder not found")
 
 func (base *Service) InitNewChat(chat *core.Chat) error {
 	lessonsFolder, err := base.getLessonsFolder(chat)
@@ -36,31 +36,31 @@ func (base *Service) InitNewChat(chat *core.Chat) error {
 	return nil
 }
 
-func (base *Service) GetNotes(chat *core.Chat) ([]*drive.File, error) {
+func (base *Service) GetLessons(chat *core.Chat) ([]*drive.File, error) {
 	lessonsFolder, err := base.getLessonsFolder(chat)
 	if err != nil {
 		return nil, err
 	}
 
-	userFolder, err := base.getUserFolder(chat, lessonsFolder.Id)
+	studentFolder, err := base.getStudentFolder(chat, lessonsFolder.Id)
 	if err != nil {
 		return nil, err
 	}
 
-	notesQuery := "'%s' in parents"
-	noteList, err := base.diskSrv.Files.
+	lessonFilesQuery := "'%s' in parents"
+	lessonFiles, err := base.diskSrv.Files.
 		List().
 		PageSize(10).
-		Q(fmt.Sprintf(notesQuery, userFolder.Id)).
+		Q(fmt.Sprintf(lessonFilesQuery, studentFolder.Id)).
 		Do()
 	if err != nil {
 		return nil, err
 	}
 
-	return noteList.Files, nil
+	return lessonFiles.Files, nil
 }
 
-func (base *Service) GetNoteContent(id string) ([]byte, error) {
+func (base *Service) GetLessonContent(id string) ([]byte, error) {
 	response, err := base.diskSrv.Files.Export(id, "text/plain").Download()
 	if err != nil {
 		return nil, err
@@ -88,12 +88,12 @@ func (base *Service) getLessonsFolder(chat *core.Chat) (*drive.File, error) {
 	return lessonsFolders.Files[0], nil
 }
 
-func (base *Service) getUserFolder(chat *core.Chat, lessonsFolderId string) (*drive.File, error) {
+func (base *Service) getStudentFolder(chat *core.Chat, lessonFolderId string) (*drive.File, error) {
 	studentFolderQuery := "'%s' in writers and '%s' in parents and name = '%s' and mimeType = 'application/vnd.google-apps.folder'"
 	studentFolder, err := base.diskSrv.Files.
 		List().
 		PageSize(10).
-		Q(fmt.Sprintf(studentFolderQuery, chat.TeacherEmail, lessonsFolderId, chat.UserName)).
+		Q(fmt.Sprintf(studentFolderQuery, chat.TeacherEmail, lessonFolderId, chat.UserName)).
 		Do()
 	if err != nil {
 		return nil, err
