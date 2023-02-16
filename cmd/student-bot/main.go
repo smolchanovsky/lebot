@@ -171,7 +171,7 @@ func HandleCallback(
 	log.Printf("try match callback with one of event")
 	switch event.Type {
 	case core.MaterialEvent:
-		material.HandleGetMaterialEvent(chat, data)
+		material.HandleButtonEvent(chat, data)
 		break
 	case core.LessonEvent:
 		lessonHandler.HandleGetLessonEvent(chat, data)
