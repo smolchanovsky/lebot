@@ -1,6 +1,7 @@
 package main
 
 import (
+	dialogflow "cloud.google.com/go/dialogflow/apiv2"
 	"encoding/json"
 	"errors"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -15,6 +16,7 @@ import (
 	"lebot/cmd/student-bot/helpers"
 	"lebot/internal/dynamodb"
 	"lebot/internal/googlecalendar"
+	"lebot/internal/googledialogflow"
 	"lebot/internal/googledrive"
 	"lebot/internal/tg"
 	"log"
@@ -32,6 +34,11 @@ func main() {
 	}
 
 	calSrv, err := googlecalendar.NewService()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	dfClient, err := googledialogflow.NewClient()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -92,7 +99,7 @@ func main() {
 			if len(text) > 0 && text[0] == '/' {
 				HandleCommand(bot, joinHandler, scheduleHandler, lessonHandler, materialHandler, linkHandler, update.Message, chatOrNil)
 			} else {
-				HandleMessage(bot, joinHandler, lessonHandler, reminderHandler, chatOrNil, update.Message)
+				HandleMessage(bot, joinHandler, lessonHandler, reminderHandler, dfClient, chatOrNil, update.Message)
 			}
 		} else if update.CallbackQuery != nil {
 			chatId := update.CallbackQuery.Message.Chat.ID
@@ -149,7 +156,7 @@ func HandleCommand(
 func HandleMessage(
 	bot *tgbotapi.BotAPI,
 	join *joinfeat.Handler, lessonHandler *lessonsfeat.Handler, reminder *reminderfeat.Handler,
-	chat *core.Chat, message *tgbotapi.Message) {
+	dfClient *dialogflow.SessionsClient, chat *core.Chat, message *tgbotapi.Message) {
 	log.Printf("try match message with one of state")
 	switch chat.State {
 	case core.Start:
@@ -158,8 +165,10 @@ func HandleMessage(
 		reminder.HandleNewChat(chat)
 		break
 	default:
-		log.Printf("message state not matched")
-		reply := helpers.GetReply(helpers.ErrorInvalidCommandRpl)
+		reply, err := googledialogflow.DetectIntentText(dfClient, "lebot-376821", string(chat.Id), message.Text)
+		if err != nil {
+			helpers.HandleUnknownErr(bot, chat.Id, err)
+		}
 		tg.SendText(bot, chat.Id, reply)
 	}
 }
