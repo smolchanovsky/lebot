@@ -23,11 +23,11 @@ func NewClient() (*dialogflow.SessionsClient, error) {
 	return sessionClient, nil
 }
 
-func DetectIntentText(client *dialogflow.SessionsClient, projectID, sessionID, text string) (string, error) {
+func DetectIntentText(client *dialogflow.SessionsClient, projectID, sessionID, text string) (*dialogflowpb.QueryResult, error) {
 	ctx := context.Background()
 
 	if projectID == "" || sessionID == "" {
-		return "", errors.New(fmt.Sprintf("Received empty project (%s) or session (%s)", projectID, sessionID))
+		return nil, errors.New(fmt.Sprintf("Received empty project (%s) or session (%s)", projectID, sessionID))
 	}
 
 	sessionPath := fmt.Sprintf("projects/%s/agent/sessions/%s", projectID, sessionID)
@@ -38,10 +38,9 @@ func DetectIntentText(client *dialogflow.SessionsClient, projectID, sessionID, t
 
 	response, err := client.DetectIntent(ctx, &request)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	queryResult := response.GetQueryResult()
-	fulfillmentText := queryResult.GetFulfillmentText()
-	return fulfillmentText, nil
+	return queryResult, nil
 }

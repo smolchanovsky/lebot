@@ -1,7 +1,7 @@
 package main
 
 import (
-	dialogflow "cloud.google.com/go/dialogflow/apiv2"
+	"cloud.google.com/go/dialogflow/apiv2/dialogflowpb"
 	"encoding/json"
 	"errors"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -94,13 +94,20 @@ func main() {
 				helpers.HandleUnknownErr(bot, chatId, err)
 				continue
 			}
+			// Command: /start
+			if chatOrNil == nil {
+				joinHandler.HandleCommand(update.Message.Chat)
+				continue
+			}
 			log.Printf("start processing '%d' chat with new message: %s", chatId, text)
 
-			if len(text) > 0 && text[0] == '/' {
-				HandleCommand(bot, joinHandler, scheduleHandler, lessonHandler, materialHandler, linkHandler, update.Message, chatOrNil)
-			} else {
-				HandleMessage(bot, joinHandler, lessonHandler, reminderHandler, dfClient, chatOrNil, update.Message)
+			intent, err := googledialogflow.DetectIntentText(dfClient, "lebot-376821", string(chatId), text)
+			if err != nil {
+				helpers.HandleUnknownErr(bot, chatOrNil.Id, err)
 			}
+
+			HandleCommand(bot, joinHandler, scheduleHandler, lessonHandler,
+				materialHandler, linkHandler, reminderHandler, intent, chatOrNil)
 		} else if update.CallbackQuery != nil {
 			chatId := update.CallbackQuery.Message.Chat.ID
 			data := update.CallbackQuery.Data
@@ -126,50 +133,31 @@ func main() {
 
 func HandleCommand(
 	bot *tgbotapi.BotAPI,
-	join *joinfeat.Handler, scheduleHandler *schedulefeat.Handler,
-	lessonHandler *lessonsfeat.Handler, material *materialfeat.Handler, link *linkfeat.Handler,
-	message *tgbotapi.Message, chat *core.Chat) {
+	join *joinfeat.Handler, scheduleHandler *schedulefeat.Handler, lessonHandler *lessonsfeat.Handler,
+	material *materialfeat.Handler, link *linkfeat.Handler, reminder *reminderfeat.Handler,
+	intent *dialogflowpb.QueryResult, chat *core.Chat) {
 	log.Printf("try match message with one of commands")
-	switch message.Text {
-	case "/start":
-		join.HandleCommand(message.Chat)
-		break
-	case "/schedule":
-		scheduleHandler.Handle(chat)
-		break
-	case "/lessons":
-		lessonHandler.HandleCommand(chat)
-		break
-	case "/materials":
-		material.HandleCommand(chat)
-		break
-	case "/links":
-		link.HandleCommand(chat)
-		break
-	default:
-		log.Printf("message command not matched")
-		reply := helpers.GetReply(helpers.ErrorInvalidCommandRpl)
-		tg.SendText(bot, chat.Id, reply)
-	}
-}
-
-func HandleMessage(
-	bot *tgbotapi.BotAPI,
-	join *joinfeat.Handler, lessonHandler *lessonsfeat.Handler, reminder *reminderfeat.Handler,
-	dfClient *dialogflow.SessionsClient, chat *core.Chat, message *tgbotapi.Message) {
-	log.Printf("try match message with one of state")
-	switch chat.State {
-	case core.Start:
-		join.HandleEmail(chat, message.Text)
+	switch true {
+	case chat.State == core.Start:
+		join.HandleEmail(chat, intent.QueryText)
 		lessonHandler.HandleNewChat(chat)
 		reminder.HandleNewChat(chat)
 		break
+	case intent.QueryText == "/schedule":
+	case intent.Intent.Name == "projects/lebot-376821/agent/intents/31735eb4-1ebc-449f-a81e-4bf53bc9a7af":
+		scheduleHandler.Handle(chat)
+		break
+	case intent.QueryText == "/lessons":
+		lessonHandler.HandleCommand(chat)
+		break
+	case intent.QueryText == "/materials":
+		material.HandleCommand(chat)
+		break
+	case intent.QueryText == "/links":
+		link.HandleCommand(chat)
+		break
 	default:
-		reply, err := googledialogflow.DetectIntentText(dfClient, "lebot-376821", string(chat.Id), message.Text)
-		if err != nil {
-			helpers.HandleUnknownErr(bot, chat.Id, err)
-		}
-		tg.SendText(bot, chat.Id, reply)
+		tg.SendText(bot, chat.Id, intent.GetFulfillmentText())
 	}
 }
 
