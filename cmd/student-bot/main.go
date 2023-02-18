@@ -144,19 +144,23 @@ func HandleIntent(
 		reminder.HandleNewChat(chat)
 		break
 	case intent.QueryText == "/schedule" || intent.Intent.Name == core.ShowScheduleIntent:
+		trySendReplyForIntent(bot, chat, intent)
 		scheduleHandler.Handle(chat)
 		break
 	case intent.QueryText == "/lessons" || intent.Intent.Name == core.ShowLessonsIntent:
+		trySendReplyForIntent(bot, chat, intent)
 		lessonHandler.HandleCommand(chat)
 		break
 	case intent.QueryText == "/materials" || intent.Intent.Name == core.ShowMaterialsIntent:
+		trySendReplyForIntent(bot, chat, intent)
 		material.HandleCommand(chat)
 		break
 	case intent.QueryText == "/links" || intent.Intent.Name == core.ShowLinksIntent:
+		trySendReplyForIntent(bot, chat, intent)
 		link.HandleCommand(chat)
 		break
 	default:
-		tg.SendText(bot, chat.Id, intent.GetFulfillmentText())
+		trySendReplyForIntent(bot, chat, intent)
 	}
 }
 
@@ -174,5 +178,12 @@ func HandleCallback(
 		break
 	default:
 		helpers.HandleUnknownErr(bot, chat.Id, errors.New("callback event not matched"))
+	}
+}
+
+func trySendReplyForIntent(bot *tgbotapi.BotAPI, chat *core.Chat, intent *dialogflowpb.QueryResult) {
+	reply := intent.GetFulfillmentText()
+	if reply != "" {
+		tg.SendText(bot, chat.Id, reply)
 	}
 }
