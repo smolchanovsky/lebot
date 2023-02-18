@@ -1,44 +1,46 @@
 # Join
 
 - id: join.start
-  text: "Hi there! 🤗 Welcome to LeBot! First, tell me your teacher's e-mail, please"
+  text: > 
+    Hi there! 🤗 Welcome to LeBot! I'm looking forward to chatting with you, 
+    but first, tell me your teacher's e-mail, please"
 - id: join.invalidEmail
-  text: "Oops, invalid e-mail, try one more time"
+  text: "Oops, invalid e-mail, try again, please"
 - id: join.emailNotFound
   text: "Hmm, I'm not sure this person exists in my system 🤔 Ask you tutor for his/her actual e-mail"
 - id: join.finish
   text: |
-    I got it! 👍 You're all set now! ✨
-    Let's have a look at the features you can find here:
+    I got it! 👍 This is what I can:
     - Useful content
     - Socials
+    - 
 
 # Schedule
 
 - id: schedule.noLessons
-  text: "No lessons"
+  text: "You don't have any lessons yet"
 
 # Content
 
 - id: content.listSummary
-  text: "Content for you:"
+  text: "Here I keep books, grammar guides and other useful stuff"
 - id: content.emptyList
-  text: "Content not found ☹️"
+  text: "I have nothing for you here, sorry ☹️"
 
 # Link
 
 - id: link.listSummary
-  text: "Your tutor link:"
+  text: "Here are your teacher's socials and other links:"
 - id: link.emptyList
-  text: "Links not found ☹️"
+  text: "Links not found 🧐️"
 
 # Reminder
 
 - id: reminder.lessonSoon
-  text: "What's up! Your class is in about an hour"
+  text: "What's up! You have a lesson today. Get ready! 🤓"
 
 - id: reminder.lessonStart
-  text: "Get ready! 🤓 Your class is in about 15 minutes"
+  text: "Your lesson is going to start soon 🧑‍💻"
 
 # Error
 

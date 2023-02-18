@@ -182,6 +182,10 @@ func HandleCallback(
 }
 
 func trySendReplyForIntent(bot *tgbotapi.BotAPI, chat *core.Chat, intent *dialogflowpb.QueryResult) {
+	if len(intent.QueryText) > 0 && intent.QueryText[0] == '/' {
+		return
+	}
+	
 	reply := intent.GetFulfillmentText()
 	if reply != "" {
 		tg.SendText(bot, chat.Id, reply)
