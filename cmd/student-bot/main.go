@@ -104,6 +104,7 @@ func main() {
 			intent, err := googledialogflow.DetectIntentText(dfClient, "lebot-376821", string(chatId), text)
 			if err != nil {
 				helpers.HandleUnknownErr(bot, chatOrNil.Id, err)
+				continue
 			}
 
 			HandleIntent(bot, joinHandler, scheduleHandler, lessonHandler,
@@ -124,6 +125,7 @@ func main() {
 			err = json.Unmarshal([]byte(data), &event)
 			if err != nil {
 				helpers.HandleUnknownErr(bot, chatId, err)
+				continue
 			}
 
 			HandleCallback(bot, materialHandler, lessonHandler, chatOrNil, event, data)
@@ -185,7 +187,7 @@ func trySendReplyForIntent(bot *tgbotapi.BotAPI, chat *core.Chat, intent *dialog
 	if len(intent.QueryText) > 0 && intent.QueryText[0] == '/' {
 		return
 	}
-	
+
 	reply := intent.GetFulfillmentText()
 	if reply != "" {
 		tg.SendText(bot, chat.Id, reply)
