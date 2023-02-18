@@ -106,7 +106,7 @@ func main() {
 				helpers.HandleUnknownErr(bot, chatOrNil.Id, err)
 			}
 
-			HandleCommand(bot, joinHandler, scheduleHandler, lessonHandler,
+			HandleIntent(bot, joinHandler, scheduleHandler, lessonHandler,
 				materialHandler, linkHandler, reminderHandler, intent, chatOrNil)
 		} else if update.CallbackQuery != nil {
 			chatId := update.CallbackQuery.Message.Chat.ID
@@ -131,7 +131,7 @@ func main() {
 	}
 }
 
-func HandleCommand(
+func HandleIntent(
 	bot *tgbotapi.BotAPI,
 	join *joinfeat.Handler, scheduleHandler *schedulefeat.Handler, lessonHandler *lessonsfeat.Handler,
 	material *materialfeat.Handler, link *linkfeat.Handler, reminder *reminderfeat.Handler,
@@ -143,17 +143,16 @@ func HandleCommand(
 		lessonHandler.HandleNewChat(chat)
 		reminder.HandleNewChat(chat)
 		break
-	case intent.QueryText == "/schedule":
-	case intent.Intent.Name == "projects/lebot-376821/agent/intents/31735eb4-1ebc-449f-a81e-4bf53bc9a7af":
+	case intent.QueryText == "/schedule" || intent.Intent.Name == core.ShowScheduleIntent:
 		scheduleHandler.Handle(chat)
 		break
-	case intent.QueryText == "/lessons":
+	case intent.QueryText == "/lessons" || intent.Intent.Name == core.ShowLessonsIntent:
 		lessonHandler.HandleCommand(chat)
 		break
-	case intent.QueryText == "/materials":
+	case intent.QueryText == "/materials" || intent.Intent.Name == core.ShowMaterialsIntent:
 		material.HandleCommand(chat)
 		break
-	case intent.QueryText == "/links":
+	case intent.QueryText == "/links" || intent.Intent.Name == core.ShowLinksIntent:
 		link.HandleCommand(chat)
 		break
 	default:
