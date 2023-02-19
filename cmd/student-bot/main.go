@@ -4,6 +4,7 @@ import (
 	"cloud.google.com/go/dialogflow/apiv2/dialogflowpb"
 	"encoding/json"
 	"errors"
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/robfig/cron/v3"
 	"lebot/cmd/student-bot/core"
@@ -90,7 +91,7 @@ func main() {
 			log.Print(err)
 		} else {
 			err := table.Put(core.Update{
-				Id:     update.Message.MessageID,
+				Id:     fmt.Sprintf("%d_%d", update.Message.Chat.ID, update.Message.MessageID),
 				ChatId: update.Message.Chat.ID,
 				Text:   update.Message.Text,
 				Json:   string(msgJson),
