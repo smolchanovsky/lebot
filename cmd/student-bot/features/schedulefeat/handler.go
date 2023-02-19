@@ -32,10 +32,10 @@ func (base *Handler) Handle(chat *core.Chat) {
 	if len(lessons) == 0 {
 		text = helpers.GetReply(helpers.ScheduleNoLessonsRpl)
 	} else {
-		text = fmt.Sprintf("Next %d lessons:\n", count)
+		text = fmt.Sprint("Your next lessons:\n")
 		for _, lesson := range lessons {
 			line := fmt.Sprintf(
-				"*%s:* %s - %s",
+				"🗓️*%s:* %s - %s",
 				lesson.start.Format("Jan-02 Mon"),
 				lesson.start.Format(time.Kitchen),
 				lesson.end.Format(time.Kitchen))
