@@ -83,17 +83,20 @@ func main() {
 
 	for update := range updates {
 		log.Printf("new update '%d'", update.UpdateID)
-		
+
 		table := db.Table("messages")
 		msgJson, err := json.Marshal(update.Message)
 		if err != nil {
 			log.Print(err)
 		} else {
-			table.Put(core.Update{
+			err := table.Put(core.Update{
 				ChatId: update.Message.Chat.ID,
 				Text:   update.Message.Text,
 				Json:   string(msgJson),
-			})
+			}).Run()
+			if err != nil {
+				log.Print(err)
+			}
 		}
 
 		if update.Message != nil {
