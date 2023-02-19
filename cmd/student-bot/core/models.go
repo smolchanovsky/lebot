@@ -21,6 +21,7 @@ type Event struct {
 }
 
 type Update struct {
+	Id     string
 	ChatId int64
 	Text   string
 	Json   string

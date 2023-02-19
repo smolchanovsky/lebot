@@ -90,6 +90,7 @@ func main() {
 			log.Print(err)
 		} else {
 			err := table.Put(core.Update{
+				Id:     update.Message.MessageID,
 				ChatId: update.Message.Chat.ID,
 				Text:   update.Message.Text,
 				Json:   string(msgJson),
