@@ -4,7 +4,6 @@ import (
 	"cloud.google.com/go/dialogflow/apiv2/dialogflowpb"
 	"encoding/json"
 	"errors"
-	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/robfig/cron/v3"
 	"lebot/cmd/student-bot/core"
@@ -21,6 +20,7 @@ import (
 	"lebot/internal/googledrive"
 	"lebot/internal/tg"
 	"log"
+	"strconv"
 )
 
 func main() {
@@ -49,23 +49,25 @@ func main() {
 		log.Fatal(err)
 	}
 
+	msgSender := helpers.NewMsgSender(bot, db)
+
 	joinSrv := joinfeat.NewService(db)
-	joinHandler := joinfeat.NewHandler(joinSrv, bot)
+	joinHandler := joinfeat.NewHandler(joinSrv, msgSender)
 
 	scheduleSrv := schedulefeat.NewService(calSrv, db)
-	scheduleHandler := schedulefeat.NewHandler(scheduleSrv, bot)
+	scheduleHandler := schedulefeat.NewHandler(scheduleSrv, msgSender)
 
 	linkSrv := linkfeat.NewService(diskSrv)
-	linkHandler := linkfeat.NewHandler(linkSrv, bot)
+	linkHandler := linkfeat.NewHandler(linkSrv, msgSender)
 
 	materialSrv := materialfeat.NewService(diskSrv)
-	materialHandler := materialfeat.NewHandler(materialSrv, bot)
+	materialHandler := materialfeat.NewHandler(materialSrv, msgSender)
 
 	lessonSrv := lessonsfeat.NewService(diskSrv)
-	lessonHandler := lessonsfeat.NewHandler(lessonSrv, bot)
+	lessonHandler := lessonsfeat.NewHandler(lessonSrv, msgSender)
 
 	reminderSrv := reminderfeat.NewService(calSrv, db)
-	reminderHandler := reminderfeat.NewHandler(reminderSrv, bot)
+	reminderHandler := reminderfeat.NewHandler(reminderSrv, msgSender)
 
 	scheduler := cron.New()
 	scheduler.AddFunc("*/20 * * * *", func() {
@@ -84,31 +86,17 @@ func main() {
 
 	for update := range updates {
 		log.Printf("new update '%d'", update.UpdateID)
+		helpers.SaveUpdate(db, &update)
 
 		if update.Message != nil {
-			table := db.Table("messages")
-			msgJson, err := json.Marshal(update.Message)
-			if err != nil {
-				log.Print(err)
-			} else {
-				err := table.Put(&core.Update{
-					Id:     fmt.Sprintf("%d_%d", update.Message.Chat.ID, update.Message.MessageID),
-					ChatId: update.Message.Chat.ID,
-					Text:   update.Message.Text,
-					Json:   string(msgJson),
-				}).Run()
-				if err != nil {
-					log.Print(err)
-				}
-			}
-			
+
 			chatId := update.Message.Chat.ID
 			text := update.Message.Text
 			log.Printf("new reply in '%d' chat: %s", chatId, text)
 
 			chatOrNil, err := core.GetChat(db, chatId)
 			if err != nil {
-				helpers.HandleUnknownErr(bot, chatId, err)
+				helpers.HandleUnknownErr(msgSender, chatId, err)
 				continue
 			}
 			// Command: /start
@@ -118,13 +106,13 @@ func main() {
 			}
 			log.Printf("start processing '%d' chat with new message: %s", chatId, text)
 
-			intent, err := googledialogflow.DetectIntentText(dfClient, "lebot-376821", string(chatId), text)
+			intent, err := googledialogflow.DetectIntentText(dfClient, "lebot-376821", strconv.FormatInt(chatId, 10), text)
 			if err != nil {
-				helpers.HandleUnknownErr(bot, chatOrNil.Id, err)
+				helpers.HandleUnknownErr(msgSender, chatOrNil.Id, err)
 				continue
 			}
 
-			HandleIntent(bot, joinHandler, scheduleHandler, lessonHandler,
+			HandleIntent(msgSender, joinHandler, scheduleHandler, lessonHandler,
 				materialHandler, linkHandler, reminderHandler, intent, chatOrNil)
 		} else if update.CallbackQuery != nil {
 			chatId := update.CallbackQuery.Message.Chat.ID
@@ -133,7 +121,7 @@ func main() {
 
 			chatOrNil, err := core.GetChat(db, chatId)
 			if err != nil {
-				helpers.HandleUnknownErr(bot, chatId, err)
+				helpers.HandleUnknownErr(msgSender, chatId, err)
 				continue
 			}
 			log.Printf("start processing '%d' chat with new callback: %s", chatId, data)
@@ -141,17 +129,17 @@ func main() {
 			var event *core.Event
 			err = json.Unmarshal([]byte(data), &event)
 			if err != nil {
-				helpers.HandleUnknownErr(bot, chatId, err)
+				helpers.HandleUnknownErr(msgSender, chatId, err)
 				continue
 			}
 
-			HandleCallback(bot, materialHandler, lessonHandler, chatOrNil, event, data)
+			HandleCallback(msgSender, materialHandler, lessonHandler, chatOrNil, event, data)
 		}
 	}
 }
 
 func HandleIntent(
-	bot *tgbotapi.BotAPI,
+	msgSender *helpers.MsgSender,
 	join *joinfeat.Handler, scheduleHandler *schedulefeat.Handler, lessonHandler *lessonsfeat.Handler,
 	material *materialfeat.Handler, link *linkfeat.Handler, reminder *reminderfeat.Handler,
 	intent *dialogflowpb.QueryResult, chat *core.Chat) {
@@ -163,28 +151,28 @@ func HandleIntent(
 		reminder.HandleNewChat(chat)
 		break
 	case intent.QueryText == "/schedule" || intent.Intent.Name == core.ShowScheduleIntent:
-		trySendReplyForIntent(bot, chat, intent)
+		trySendReplyForIntent(msgSender, chat, intent)
 		scheduleHandler.Handle(chat)
 		break
 	case intent.QueryText == "/lessons" || intent.Intent.Name == core.ShowLessonsIntent:
-		trySendReplyForIntent(bot, chat, intent)
+		trySendReplyForIntent(msgSender, chat, intent)
 		lessonHandler.HandleCommand(chat)
 		break
 	case intent.QueryText == "/materials" || intent.Intent.Name == core.ShowMaterialsIntent:
-		trySendReplyForIntent(bot, chat, intent)
+		trySendReplyForIntent(msgSender, chat, intent)
 		material.HandleCommand(chat)
 		break
 	case intent.QueryText == "/links" || intent.Intent.Name == core.ShowLinksIntent:
-		trySendReplyForIntent(bot, chat, intent)
+		trySendReplyForIntent(msgSender, chat, intent)
 		link.HandleCommand(chat)
 		break
 	default:
-		trySendReplyForIntent(bot, chat, intent)
+		trySendReplyForIntent(msgSender, chat, intent)
 	}
 }
 
 func HandleCallback(
-	bot *tgbotapi.BotAPI,
+	msgSender *helpers.MsgSender,
 	material *materialfeat.Handler, lessonHandler *lessonsfeat.Handler,
 	chat *core.Chat, event *core.Event, data string) {
 	log.Printf("try match callback with one of event")
@@ -196,17 +184,17 @@ func HandleCallback(
 		lessonHandler.HandleButtonEvent(chat, data)
 		break
 	default:
-		helpers.HandleUnknownErr(bot, chat.Id, errors.New("callback event not matched"))
+		helpers.HandleUnknownErr(msgSender, chat.Id, errors.New("callback event not matched"))
 	}
 }
 
-func trySendReplyForIntent(bot *tgbotapi.BotAPI, chat *core.Chat, intent *dialogflowpb.QueryResult) {
+func trySendReplyForIntent(msgSender *helpers.MsgSender, chat *core.Chat, intent *dialogflowpb.QueryResult) {
 	if len(intent.QueryText) > 0 && intent.QueryText[0] == '/' {
 		return
 	}
 
 	reply := intent.GetFulfillmentText()
 	if reply != "" {
-		tg.SendText(bot, chat.Id, reply)
+		msgSender.SendText(chat.Id, reply)
 	}
 }

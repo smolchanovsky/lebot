@@ -19,10 +19,3 @@ type Replica struct {
 type Event struct {
 	Type int `json:"t"`
 }
-
-type Update struct {
-	Id     string
-	ChatId int64
-	Text   string
-	Json   string
-}

@@ -6,29 +6,28 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"lebot/cmd/student-bot/core"
 	"lebot/cmd/student-bot/helpers"
-	"lebot/internal/tg"
 )
 
 type Handler struct {
-	srv *Service
-	bot *tgbotapi.BotAPI
+	srv       *Service
+	msgSender *helpers.MsgSender
 }
 
-func NewHandler(srv *Service, bot *tgbotapi.BotAPI) *Handler {
-	return &Handler{srv: srv, bot: bot}
+func NewHandler(srv *Service, msgSender *helpers.MsgSender) *Handler {
+	return &Handler{srv: srv, msgSender: msgSender}
 }
 
 func (base *Handler) HandleNewChat(chat *core.Chat) {
 	err := base.srv.InitNewChat(chat)
 	if err != nil {
-		helpers.HandleUnknownErr(base.bot, chat.Id, err)
+		helpers.HandleUnknownErr(base.msgSender, chat.Id, err)
 	}
 }
 
 func (base *Handler) HandleCommand(chat *core.Chat) {
 	lessonsFolder, err := base.srv.GetLessonsRoot(chat)
 	if err != nil {
-		helpers.HandleUnknownErr(base.bot, chat.Id, err)
+		helpers.HandleUnknownErr(base.msgSender, chat.Id, err)
 		return
 	}
 
@@ -39,7 +38,7 @@ func (base *Handler) HandleButtonEvent(chat *core.Chat, data string) {
 	var event core.ButtonEvent
 	err := json.Unmarshal([]byte(data), &event)
 	if err != nil {
-		helpers.HandleUnknownErr(base.bot, chat.Id, err)
+		helpers.HandleUnknownErr(base.msgSender, chat.Id, err)
 		return
 	}
 
@@ -56,7 +55,7 @@ func (base *Handler) HandleButtonEvent(chat *core.Chat, data string) {
 func (base *Handler) renderFolder(chat *core.Chat, id string) {
 	lessons, err := base.srv.GetLessonFolders(id)
 	if err != nil {
-		helpers.HandleUnknownErr(base.bot, chat.Id, err)
+		helpers.HandleUnknownErr(base.msgSender, chat.Id, err)
 		return
 	}
 
@@ -65,7 +64,7 @@ func (base *Handler) renderFolder(chat *core.Chat, id string) {
 	rows := make([][]tgbotapi.InlineKeyboardButton, len(lessons))
 	if len(lessons) == 0 {
 		msg = tgbotapi.NewMessage(chat.Id, helpers.GetReply(helpers.ContentEmptyListRpl))
-		tg.SendMsg(base.bot, msg)
+		base.msgSender.SendMsg(&msg)
 	} else {
 		for i, lesson := range lessons {
 			var text string
@@ -87,20 +86,20 @@ func (base *Handler) renderFolder(chat *core.Chat, id string) {
 			}
 			eventJson, err := json.Marshal(event)
 			if err != nil {
-				helpers.HandleUnknownErr(base.bot, chat.Id, err)
+				helpers.HandleUnknownErr(base.msgSender, chat.Id, err)
 			}
 			rows[i] = tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData(text, string(eventJson)))
 		}
 		msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(rows...)
-		tg.SendMsg(base.bot, msg)
+		base.msgSender.SendMsg(&msg)
 	}
 }
 
 func (base *Handler) renderFile(chat *core.Chat, id string) {
 	materialMeta, err := base.srv.GetLessonFileMeta(id)
 	if err != nil {
-		helpers.HandleUnknownErr(base.bot, chat.Id, err)
+		helpers.HandleUnknownErr(base.msgSender, chat.Id, err)
 	}
 
 	// Copy from materials
@@ -108,16 +107,16 @@ func (base *Handler) renderFile(chat *core.Chat, id string) {
 	if materialMeta.Size <= maxMaterialSize {
 		materialContent, err := base.srv.GetLessonFileContent(materialMeta.Id)
 		if err != nil {
-			helpers.HandleUnknownErr(base.bot, chat.Id, err)
+			helpers.HandleUnknownErr(base.msgSender, chat.Id, err)
 		}
 
 		doc := tgbotapi.NewDocument(chat.Id, tgbotapi.FileBytes{
 			Name:  fmt.Sprintf("%s.%s", materialMeta.Name, "txt"), // TODO: Fix extension
 			Bytes: materialContent,
 		})
-		tg.SendDoc(base.bot, doc)
+		base.msgSender.SendDoc(&doc)
 	} else {
 		msg := tgbotapi.NewMessage(chat.Id, materialMeta.WebContentLink)
-		tg.SendMsg(base.bot, msg)
+		base.msgSender.SendMsg(&msg)
 	}
 }

@@ -2,21 +2,19 @@ package schedulefeat
 
 import (
 	"fmt"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"lebot/cmd/student-bot/core"
 	"lebot/cmd/student-bot/helpers"
-	"lebot/internal/tg"
 	"log"
 	"time"
 )
 
 type Handler struct {
-	srv *Service
-	bot *tgbotapi.BotAPI
+	srv       *Service
+	msgSender *helpers.MsgSender
 }
 
-func NewHandler(srv *Service, bot *tgbotapi.BotAPI) *Handler {
-	return &Handler{srv: srv, bot: bot}
+func NewHandler(srv *Service, msgSender *helpers.MsgSender) *Handler {
+	return &Handler{srv: srv, msgSender: msgSender}
 }
 
 func (base *Handler) Handle(chat *core.Chat) {
@@ -46,5 +44,5 @@ func (base *Handler) Handle(chat *core.Chat) {
 			text += fmt.Sprintf("\nThere are only %d lessons in the schedule", len(lessons))
 		}
 	}
-	tg.SendText(base.bot, chat.Id, text)
+	base.msgSender.SendText(chat.Id, text)
 }

@@ -16,7 +16,7 @@ func NewBotApi() (*tgbotapi.BotAPI, error) {
 	return bot, err
 }
 
-func SendMsg(bot *tgbotapi.BotAPI, msg tgbotapi.MessageConfig) {
+func SendMsg(bot *tgbotapi.BotAPI, msg *tgbotapi.MessageConfig) {
 	if _, err := bot.Send(msg); err != nil {
 		log.Print("unable to send message: ", err)
 	} else {
@@ -24,16 +24,10 @@ func SendMsg(bot *tgbotapi.BotAPI, msg tgbotapi.MessageConfig) {
 	}
 }
 
-func SendDoc(bot *tgbotapi.BotAPI, doc tgbotapi.DocumentConfig) {
+func SendDoc(bot *tgbotapi.BotAPI, doc *tgbotapi.DocumentConfig) {
 	if _, err := bot.Send(doc); err != nil {
 		log.Print("unable to send doc: ", err)
 	} else {
 		log.Printf("document sent")
 	}
-}
-
-func SendText(bot *tgbotapi.BotAPI, chatId int64, text string) {
-	msg := tgbotapi.NewMessage(chatId, text)
-	msg.ParseMode = tgbotapi.ModeMarkdown
-	SendMsg(bot, msg)
 }
