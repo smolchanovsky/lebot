@@ -4,6 +4,7 @@ import (
 	"cloud.google.com/go/dialogflow/apiv2/dialogflowpb"
 	"encoding/json"
 	"errors"
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/robfig/cron/v3"
 	"lebot/cmd/student-bot/core"
@@ -20,10 +21,20 @@ import (
 	"lebot/internal/googledrive"
 	"lebot/internal/tg"
 	"log"
+	"os"
 	"strconv"
+	"time"
 )
 
 func main() {
+	logfile := fmt.Sprintf("/var/log/student-bot/logs-%s", time.Now().Format("2006-01-02"))
+	f, err := os.OpenFile(logfile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+	defer f.Close()
+	log.SetOutput(f)
+
 	db, err := dynamodb.NewDb()
 	if err != nil {
 		log.Fatal(err)
