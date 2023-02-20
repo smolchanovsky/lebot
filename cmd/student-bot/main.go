@@ -85,23 +85,23 @@ func main() {
 	for update := range updates {
 		log.Printf("new update '%d'", update.UpdateID)
 
-		table := db.Table("messages")
-		msgJson, err := json.Marshal(update.Message)
-		if err != nil {
-			log.Print(err)
-		} else {
-			err := table.Put(core.Update{
-				Id:     fmt.Sprintf("%d_%d", update.Message.Chat.ID, update.Message.MessageID),
-				ChatId: update.Message.Chat.ID,
-				Text:   update.Message.Text,
-				Json:   string(msgJson),
-			}).Run()
+		if update.Message != nil {
+			table := db.Table("messages")
+			msgJson, err := json.Marshal(update.Message)
 			if err != nil {
 				log.Print(err)
+			} else {
+				err := table.Put(&core.Update{
+					Id:     fmt.Sprintf("%d_%d", update.Message.Chat.ID, update.Message.MessageID),
+					ChatId: update.Message.Chat.ID,
+					Text:   update.Message.Text,
+					Json:   string(msgJson),
+				}).Run()
+				if err != nil {
+					log.Print(err)
+				}
 			}
-		}
-
-		if update.Message != nil {
+			
 			chatId := update.Message.Chat.ID
 			text := update.Message.Text
 			log.Printf("new reply in '%d' chat: %s", chatId, text)
