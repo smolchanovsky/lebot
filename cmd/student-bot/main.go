@@ -27,7 +27,7 @@ import (
 )
 
 func main() {
-	logfile := fmt.Sprintf("/var/log/student-bot/logs-%s", time.Now().Format("2006-01-02"))
+	logfile := fmt.Sprintf("/var/log/lebot/logs-%s", time.Now().Format("2006-01-02"))
 	f, err := os.OpenFile(logfile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("error opening file: %v", err)
