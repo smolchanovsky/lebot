@@ -17,7 +17,7 @@ func NewMsgSender(bot *tgbotapi.BotAPI, db *dynamo.DB) *MsgSender {
 }
 
 func (base *MsgSender) SendMsg(msg *tgbotapi.MessageConfig) {
-	err := SaveMsgReply(base.db, msg)
+	err := SaveBotMsg(base.db, msg)
 	if err != nil {
 		log.Print(err)
 	}
@@ -25,7 +25,7 @@ func (base *MsgSender) SendMsg(msg *tgbotapi.MessageConfig) {
 }
 
 func (base *MsgSender) SendDoc(doc *tgbotapi.DocumentConfig) {
-	err := SaveDocReply(base.db, doc)
+	err := SaveBotDoc(base.db, doc)
 	if err != nil {
 		log.Print(err)
 	}

@@ -86,7 +86,7 @@ func main() {
 
 	for update := range updates {
 		log.Printf("new update '%d'", update.UpdateID)
-		helpers.SaveUpdate(db, &update)
+		helpers.SaveUserUpdate(db, &update)
 
 		if update.Message != nil {
 

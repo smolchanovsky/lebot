@@ -10,10 +10,10 @@ import (
 )
 
 const (
-	MessageType  = "message"
+	UserMsgType  = "userMsg"
 	CallbackType = "callback"
-	MsgReplyType = "messageReply"
-	DocReplyType = "messageReply"
+	BotMsgType   = "botMsg"
+	BotDocType   = "botDoc"
 )
 
 type message struct {
@@ -25,7 +25,7 @@ type message struct {
 	Json      string
 }
 
-func SaveMsgReply(db *dynamo.DB, msgConfig *tgbotapi.MessageConfig) error {
+func SaveBotMsg(db *dynamo.DB, msgConfig *tgbotapi.MessageConfig) error {
 	table := db.Table("messages")
 	msgJson, err := json.Marshal(msgConfig)
 	if err != nil {
@@ -33,7 +33,7 @@ func SaveMsgReply(db *dynamo.DB, msgConfig *tgbotapi.MessageConfig) error {
 	} else {
 		msg := &message{
 			Id:        fmt.Sprintf("%d_%s", msgConfig.ChatID, uuid.New().String()),
-			Type:      MsgReplyType,
+			Type:      BotMsgType,
 			CreatedAt: time.Now(),
 			ChatId:    msgConfig.ChatID,
 			Text:      msgConfig.Text,
@@ -47,11 +47,11 @@ func SaveMsgReply(db *dynamo.DB, msgConfig *tgbotapi.MessageConfig) error {
 	return nil
 }
 
-func SaveDocReply(db *dynamo.DB, docConfig *tgbotapi.DocumentConfig) error {
+func SaveBotDoc(db *dynamo.DB, docConfig *tgbotapi.DocumentConfig) error {
 	table := db.Table("messages")
 	msg := &message{
 		Id:        fmt.Sprintf("%d_%s", docConfig.ChatID, uuid.New().String()),
-		Type:      DocReplyType,
+		Type:      BotDocType,
 		CreatedAt: time.Now(),
 		ChatId:    docConfig.ChatID,
 		Text:      "",
@@ -64,7 +64,7 @@ func SaveDocReply(db *dynamo.DB, docConfig *tgbotapi.DocumentConfig) error {
 	return nil
 }
 
-func SaveUpdate(db *dynamo.DB, update *tgbotapi.Update) error {
+func SaveUserUpdate(db *dynamo.DB, update *tgbotapi.Update) error {
 	table := db.Table("messages")
 	updateJson, err := json.Marshal(update)
 	if err != nil {
@@ -74,7 +74,7 @@ func SaveUpdate(db *dynamo.DB, update *tgbotapi.Update) error {
 		if update.Message != nil {
 			msg = &message{
 				Id:        fmt.Sprintf("%d_%d", update.Message.Chat.ID, update.Message.MessageID),
-				Type:      MessageType,
+				Type:      UserMsgType,
 				CreatedAt: time.Now(),
 				ChatId:    update.Message.Chat.ID,
 				Text:      update.Message.Text,
