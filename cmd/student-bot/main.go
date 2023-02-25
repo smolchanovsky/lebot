@@ -7,6 +7,7 @@ import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/robfig/cron/v3"
+	"io"
 	"lebot/cmd/student-bot/core"
 	"lebot/cmd/student-bot/features/joinfeat"
 	"lebot/cmd/student-bot/features/lessonsfeat"
@@ -27,13 +28,14 @@ import (
 )
 
 func main() {
-	logfile := fmt.Sprintf("/var/log/lebot/logs-%s", time.Now().Format("2006-01-02"))
-	f, err := os.OpenFile(logfile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	logFilePath := fmt.Sprintf("/tmp/logs/lebot/logs-%s.txt", time.Now().Format("2006-01-02"))
+	logFile, err := os.OpenFile(logFilePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("error opening file: %v", err)
 	}
-	defer f.Close()
-	log.SetOutput(f)
+	defer logFile.Close()
+	mw := io.MultiWriter(os.Stdout, logFile)
+	log.SetOutput(mw)
 
 	db, err := dynamodb.NewDb()
 	if err != nil {
