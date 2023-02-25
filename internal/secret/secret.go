@@ -12,7 +12,7 @@ const AwsKeyIdPath = "secrets/aws-key-id"
 const AwsKeyPath = "secrets/aws-key"
 
 func GetSecret(filePath string) (string, error) {
-	fullPath := path.Join("tmp", filePath)
+	fullPath := path.Join("apps/lebot", filePath)
 	data, err := os.ReadFile(fullPath)
 	return strings.TrimSpace(string(data)), err
 }
